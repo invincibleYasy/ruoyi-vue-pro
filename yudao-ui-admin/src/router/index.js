@@ -69,11 +69,11 @@ export const constantRoutes = [
     component: Layout,
     redirect: 'index',
     children: [{
-        path: 'index',
-        component: (resolve) => require(['@/views/index'], resolve),
-        name: '首页',
-        meta: {title: '首页', icon: 'dashboard', affix: true}
-      }
+      path: 'index',
+      component: (resolve) => require(['@/views/index'], resolve),
+      name: '首页',
+      meta: {title: '首页', icon: 'dashboard', affix: true}
+    }
     ]
   }, {
     path: '/user',
@@ -81,44 +81,55 @@ export const constantRoutes = [
     hidden: true,
     redirect: 'noredirect',
     children: [{
-        path: 'profile',
-        component: (resolve) => require(['@/views/system/user/profile/index'], resolve),
-        name: 'Profile',
-        meta: {title: '个人中心', icon: 'user'}
-      }
+      path: 'profile',
+      component: (resolve) => require(['@/views/system/user/profile/index'], resolve),
+      name: 'Profile',
+      meta: {title: '个人中心', icon: 'user'}
+    }
     ]
   }, {
     path: '/dict',
     component: Layout,
     hidden: true,
     children: [{
-        path: 'type/data/:dictId(\\d+)',
-        component: (resolve) => require(['@/views/system/dict/data'], resolve),
-        name: 'Data',
-        meta: {title: '字典数据', icon: '', activeMenu: '/system/dict'}
-      }
+      path: 'type/data/:dictId(\\d+)',
+      component: (resolve) => require(['@/views/system/dict/data'], resolve),
+      name: 'Data',
+      meta: {title: '字典数据', icon: '', activeMenu: '/system/dict'}
+    }
+    ]
+  }, {
+    path: '/project',
+    component: Layout,
+    hidden: true,
+    children: [{
+      path: 'info/:projectId(\\d+)',
+      component: (resolve) => require(['@/views/pdeploy/project/list/info'], resolve),
+      name: 'info',
+      meta: {title: '项目信息', icon: '', activeMenu: '/pdeploy/project'}
+    }
     ]
   }, {
     path: '/job',
     component: Layout,
     hidden: true,
     children: [{
-        path: 'log',
-        component: (resolve) => require(['@/views/infra/job/log'], resolve),
-        name: 'JobLog',
-        meta: {title: '调度日志', activeMenu: '/infra/job'}
-      }
+      path: 'log',
+      component: (resolve) => require(['@/views/infra/job/log'], resolve),
+      name: 'JobLog',
+      meta: {title: '调度日志', activeMenu: '/infra/job'}
+    }
     ]
   }, {
     path: '/codegen',
     component: Layout,
     hidden: true,
     children: [{
-        path: 'edit/:tableId(\\d+)',
-        component: (resolve) => require(['@/views/infra/codegen/editTable'], resolve),
-        name: 'GenEdit',
-        meta: {title: '修改生成配置', activeMenu: '/infra/codegen'}
-      }
+      path: 'edit/:tableId(\\d+)',
+      component: (resolve) => require(['@/views/infra/codegen/editTable'], resolve),
+      name: 'GenEdit',
+      meta: {title: '修改生成配置', activeMenu: '/infra/codegen'}
+    }
     ]
   }, {
     path: '/bpm',
@@ -126,47 +137,47 @@ export const constantRoutes = [
     hidden: true,
     redirect: 'noredirect',
     children: [{
-        path: 'oa/leave/create',
-        component: (resolve) => require(['@/views/bpm/oa/leave/create'], resolve),
-        name: '发起 OA 请假',
-        meta: {title: '发起 OA 请假', icon: 'form', activeMenu: '/bpm/oa/leave'}
-      }, {
-        path: 'oa/leave/detail',
-        component: (resolve) => require(['@/views/bpm/oa/leave/detail'], resolve),
-        name: '查看 OA 请假',
-        meta: {title: '查看 OA 请假', icon: 'view', activeMenu: '/bpm/oa/leave'}
-      }
+      path: 'oa/leave/create',
+      component: (resolve) => require(['@/views/bpm/oa/leave/create'], resolve),
+      name: '发起 OA 请假',
+      meta: {title: '发起 OA 请假', icon: 'form', activeMenu: '/bpm/oa/leave'}
+    }, {
+      path: 'oa/leave/detail',
+      component: (resolve) => require(['@/views/bpm/oa/leave/detail'], resolve),
+      name: '查看 OA 请假',
+      meta: {title: '查看 OA 请假', icon: 'view', activeMenu: '/bpm/oa/leave'}
+    }
     ]
   }, {
     path: '/bpm',
     component: Layout,
     hidden: true,
     children: [{
-        path: 'manager/form/edit',
-        component: (resolve) => require(['@/views/bpm/form/formEditor'], resolve),
-        name: '流程表单-编辑',
-        meta: {title: '流程表单-编辑', activeMenu: '/bpm/manager/form'}
-      }, {
-        path: 'manager/definition',
-        component: (resolve) => require(['@/views/bpm/definition/index'], resolve),
-        name: '流程定义',
-        meta: {title: '流程定义', activeMenu: '/bpm/manager/model'}
-      }, {
-        path: 'manager/model/design',
-        component: (resolve) => require(['@/views/bpm/model/modelEditor'], resolve),
-        name: '设计流程',
-        meta: {title: '设计流程', activeMenu: '/bpm/manager/model'}
-      }, {
-        path: 'process-instance/create',
-        component: (resolve) => require(['@/views/bpm/processInstance/create'], resolve),
-        name: '发起流程',
-        meta: {title: '发起流程', activeMenu: '/bpm/task/my'}
-      }, {
-        path: 'process-instance/detail',
-        component: (resolve) => require(['@/views/bpm/processInstance/detail'], resolve),
-        name: '流程详情',
-        meta: {title: '流程详情', activeMenu: '/bpm/task/my'}
-      }
+      path: 'manager/form/edit',
+      component: (resolve) => require(['@/views/bpm/form/formEditor'], resolve),
+      name: '流程表单-编辑',
+      meta: {title: '流程表单-编辑', activeMenu: '/bpm/manager/form'}
+    }, {
+      path: 'manager/definition',
+      component: (resolve) => require(['@/views/bpm/definition/index'], resolve),
+      name: '流程定义',
+      meta: {title: '流程定义', activeMenu: '/bpm/manager/model'}
+    }, {
+      path: 'manager/model/design',
+      component: (resolve) => require(['@/views/bpm/model/modelEditor'], resolve),
+      name: '设计流程',
+      meta: {title: '设计流程', activeMenu: '/bpm/manager/model'}
+    }, {
+      path: 'process-instance/create',
+      component: (resolve) => require(['@/views/bpm/processInstance/create'], resolve),
+      name: '发起流程',
+      meta: {title: '发起流程', activeMenu: '/bpm/task/my'}
+    }, {
+      path: 'process-instance/detail',
+      component: (resolve) => require(['@/views/bpm/processInstance/detail'], resolve),
+      name: '流程详情',
+      meta: {title: '流程详情', activeMenu: '/bpm/task/my'}
+    }
     ]
   }
 ]

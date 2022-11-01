@@ -19,6 +19,7 @@
         <module>yudao-module-infra</module>
         <module>yudao-module-pay</module>
         <module>yudao-module-mall</module>
+        <module>yudao-module-pdeploy</module>
         <module>yudao-module-visualization</module>
         <!-- 示例项目 -->
         <module>yudao-example</module>

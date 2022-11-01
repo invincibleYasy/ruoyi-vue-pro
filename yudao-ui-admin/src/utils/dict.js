@@ -9,7 +9,12 @@ export const DICT_TYPE = {
   USER_TYPE: 'user_type',
   COMMON_STATUS: 'common_status',
 
+  // ========== DEPLOY 模块 ==========
+  MODULE_TYPE: 'module_type',
+  PROCESS_TYPE: 'process_type',
+  ANSIBLE_CONF_TYPE: 'ansible_conf_type',
   // ========== SYSTEM 模块 ==========
+  SYSTEM_YES_NO: 'system_yes_no',
   SYSTEM_USER_SEX: 'system_user_sex',
   SYSTEM_MENU_TYPE: 'system_menu_type',
   SYSTEM_ROLE_TYPE: 'system_role_type',

@@ -40,12 +40,14 @@ Vue.prototype.divide = divide
 
 // 全局组件挂载
 Vue.component('DictTag', DictTag)
+Vue.component('DynamicDictTag', DynamicDictTag)
 Vue.component('DocAlert', DocAlert)
 Vue.component('Pagination', Pagination)
 Vue.component('RightToolbar', RightToolbar)
 // 字典标签组件
 import DictTag from '@/components/DictTag'
 import DocAlert from '@/components/DocAlert'
+import DynamicDictTag from '@/components/DynamicDictTag'
 // 头部标签插件
 import VueMeta from 'vue-meta'
 

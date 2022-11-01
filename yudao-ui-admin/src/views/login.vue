@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div class="logo"></div>
+<!--    <div class="logo"></div>-->
     <!-- 登录区域 -->
     <div class="content">
       <!-- 配图 -->
@@ -9,7 +9,7 @@
       <div class="field">
         <!-- [移动端]标题 -->
         <h2 class="mobile-title">
-          <h3 class="title">芋道后台管理系统</h3>
+          <h3 class="title">One Day</h3>
         </h2>
 
         <!-- 表单 -->
@@ -94,7 +94,7 @@
 
     <!-- footer -->
     <div class="footer">
-      Copyright © 2020-2022 iocoder.cn All Rights Reserved.
+      Copyright © 2020-2022 udesk.cn All Rights Reserved.
     </div>
   </div>
 </template>
@@ -135,7 +135,7 @@ export default {
         mobile: "",
         mobileCode: "",
         rememberMe: false,
-        tenantName: "芋道源码",
+        tenantName: "OneDay",
       },
       scene: 21,
 
