@@ -39,19 +39,19 @@
     <el-table v-loading="loading" :data="list">
       <el-table-column label="ID" align="center" prop="id"/>
       <el-table-column label="基线名称" align="center" prop="name"/>
-      <el-table-column label="基线版本" align="center" prop="version"/>
+<!--      <el-table-column label="基线版本" align="center" prop="version"/>-->
       <el-table-column label="主配置" align="center">
         <template slot-scope="scope">
           <el-button type="text" @click="confShow(scope.row.mainConf)">主配置<i class="el-icon-view el-icon--right"></i>
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column label="ccpass配置" align="center">
-        <template slot-scope="scope">
-          <el-button type="text" @click="confShow(scope.row.mainConfCcpass)">ccpass配置<i
-            class="el-icon-view el-icon--right"></i></el-button>
-        </template>
-      </el-table-column>
+<!--      <el-table-column label="ccpass配置" align="center">-->
+<!--        <template slot-scope="scope">-->
+<!--          <el-button type="text" @click="confShow(scope.row.mainConfCcpass)">ccpass配置<i-->
+<!--            class="el-icon-view el-icon&#45;&#45;right"></i></el-button>-->
+<!--        </template>-->
+<!--      </el-table-column>-->
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -79,15 +79,15 @@
         <el-form-item label="基线名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入基线名称"/>
         </el-form-item>
-        <el-form-item label="基线版本" prop="version">
-          <el-input-number v-model="form.version" placeholder="请输入基线版本"/>
-        </el-form-item>
+<!--        <el-form-item label="基线版本" prop="version">-->
+<!--          <el-input-number v-model="form.version" placeholder="请输入基线版本"/>-->
+<!--        </el-form-item>-->
         <el-form-item label="主配置" prop="mainConf">
           <el-input v-model="form.mainConf" type="textarea" placeholder="请输入内容"/>
         </el-form-item>
-        <el-form-item label="ccpass配置" prop="mainConfCcpass">
-          <el-input v-model="form.mainConfCcpass" type="textarea" placeholder="请输入内容"/>
-        </el-form-item>
+<!--        <el-form-item label="ccpass配置" prop="mainConfCcpass">-->
+<!--          <el-input v-model="form.mainConfCcpass" type="textarea" placeholder="请输入内容"/>-->
+<!--        </el-form-item>-->
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"/>
         </el-form-item>

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.pdeploy.controller.admin.module.vo;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.*;
 import java.util.*;
 import io.swagger.annotations.*;
@@ -17,6 +18,15 @@ public class ModuleExportReqVO {
 
     @ApiModelProperty(value = "模块名称")
     private String name;
+
+    @ApiModelProperty(value = "模块标签")
+    private String tag;
+
+    @ApiModelProperty(value = "模块标签")
+    private String midwareTags;
+
+    @ApiModelProperty(value = "镜像tags")
+    private String imageTags;
 
     @ApiModelProperty(value = "模块类型")
     private Integer moduleType;

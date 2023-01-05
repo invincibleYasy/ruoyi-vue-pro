@@ -20,6 +20,15 @@ public class ModulePageReqVO extends PageParam {
     @ApiModelProperty(value = "模块名称")
     private String name;
 
+    @ApiModelProperty(value = "模块标签")
+    private String tag;
+
+    @ApiModelProperty(value = "模块标签")
+    private String midwareTags;
+
+    @ApiModelProperty(value = "镜像tags")
+    private String imageTags;
+
     @ApiModelProperty(value = "模块类型")
     private Integer moduleType;
 

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.pdeploy.controller.admin.projectconf.vo;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.*;
 import java.util.*;
 import io.swagger.annotations.*;
@@ -17,6 +18,12 @@ public class ProjectConfExportReqVO {
 
     @ApiModelProperty(value = " 所属项目")
     private Long projectId;
+
+    @ApiModelProperty(value = "配置标签")
+    private String tag;
+
+    @ApiModelProperty(value = "标签过滤")
+    private String tagFilter;
 
     @ApiModelProperty(value = "键")
     private String confKey;

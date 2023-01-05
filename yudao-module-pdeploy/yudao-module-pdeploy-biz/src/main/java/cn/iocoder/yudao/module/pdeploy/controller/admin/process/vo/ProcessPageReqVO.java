@@ -23,6 +23,9 @@ public class ProcessPageReqVO extends PageParam {
     @ApiModelProperty(value = "进程名称")
     private String name;
 
+    @ApiModelProperty(value = "进程标签")
+    private String tag;
+
     @ApiModelProperty(value = "进程版本")
     private String version;
 

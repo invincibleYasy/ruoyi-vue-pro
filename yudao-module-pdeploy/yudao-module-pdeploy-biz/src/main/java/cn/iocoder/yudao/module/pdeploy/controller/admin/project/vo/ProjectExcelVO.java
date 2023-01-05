@@ -27,6 +27,9 @@ public class ProjectExcelVO {
     @ExcelProperty("项目名称")
     private String name;
 
+    @ExcelProperty(value = "项目配置")
+    private String projConf;
+
     @ExcelProperty("创建时间")
     private Date createTime;
 

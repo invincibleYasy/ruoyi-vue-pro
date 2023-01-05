@@ -26,6 +26,12 @@ public class ProjectConfExcelVO {
     @ExcelProperty(" 所属项目")
     private Long projectId;
 
+    @ExcelProperty(value = "配置标签")
+    private String tag;
+
+    @ExcelProperty(value = "标签过滤")
+    private String tagFilter;
+
     @ExcelProperty("键")
     private String confKey;
 

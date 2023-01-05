@@ -17,7 +17,7 @@ public class BaselineBaseVO {
     private String name;
 
     @ApiModelProperty(value = "基线版本", required = true)
-    @NotNull(message = "基线版本不能为空")
+//    @NotNull(message = "基线版本不能为空")
     private String version;
 
     @ApiModelProperty(value = "主配置")

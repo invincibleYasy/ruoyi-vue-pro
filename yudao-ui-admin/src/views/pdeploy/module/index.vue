@@ -53,12 +53,51 @@
         </template>
       </el-table-column>
       <el-table-column label="模块名称" align="center" prop="name"/>
+      <el-table-column label="模块标签" align="center" prop="tag"/>
+      <el-table-column label="中间件依赖" align="center" prop="midwareTags">
+        <template slot-scope="scope">
+          <el-popover
+            placement="right"
+            trigger="hover"
+          >
+            <div v-for="(midTag,index) in scope.row.midwareTags ? scope.row.midwareTags.split(','):[]" :key="index+midTag" >
+              {{midTag}}
+            </div>
+            <el-tag slot="reference">查看中间件依赖</el-tag>
+          </el-popover>
+        </template>
+      </el-table-column>
+      <el-table-column label="镜像Tags" align="center" prop="imageTags">
+        <template slot-scope="scope">
+          <el-popover
+            placement="right"
+            trigger="hover"
+          >
+            <div v-for="(imageTag,index) in scope.row.imageTags ? scope.row.imageTags.split(','):[]" :key="index + imageTag"  >
+              {{imageTag}}
+            </div>
+            <el-tag slot="reference">查看镜像Tags</el-tag>
+          </el-popover>
+        </template>
+      </el-table-column>
+      <el-table-column label="包含进程" align="center" prop="midwareTags">
+        <template slot-scope="scope">
+          <el-popover
+            placement="right"
+            trigger="hover"
+          >
+            <div v-for="(midTag,index) in scope.row.midwareTags ? scope.row.midwareTags.split(','):[]" :key="index+midTag" >
+              {{midTag}}
+            </div>
+            <el-tag slot="reference">查看包含进程</el-tag>
+          </el-popover>
+        </template>
+      </el-table-column>
       <el-table-column label="模块类型" align="center" prop="moduleType">
         <template slot-scope="scope">
           <dict-tag :type="DICT_TYPE.MODULE_TYPE" :value="scope.row.moduleType"/>
         </template>
       </el-table-column>
-      <el-table-column label="估时" align="center" prop="estimatedTime"/>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -130,7 +169,6 @@ import {
 } from "@/api/pdeploy/module";
 import {getAllBaselines} from "../../../api/pdeploy/baseline";
 import {getAllProcesses} from "../../../api/pdeploy/process";
-
 export default {
   name: "Module",
   components: {},

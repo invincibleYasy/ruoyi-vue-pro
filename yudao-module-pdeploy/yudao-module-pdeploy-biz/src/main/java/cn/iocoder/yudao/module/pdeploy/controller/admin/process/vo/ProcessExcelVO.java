@@ -30,6 +30,9 @@ public class ProcessExcelVO {
     @ExcelProperty("进程名称")
     private String name;
 
+    @ExcelProperty("进程标签")
+    private String tag;
+
     @ExcelProperty("进程版本")
     private String version;
 

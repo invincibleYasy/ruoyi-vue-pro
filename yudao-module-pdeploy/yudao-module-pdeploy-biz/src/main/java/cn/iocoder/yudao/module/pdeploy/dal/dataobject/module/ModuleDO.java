@@ -1,8 +1,6 @@
 package cn.iocoder.yudao.module.pdeploy.dal.dataobject.module;
 
-import cn.iocoder.yudao.module.pdeploy.dal.dataobject.process.ProcessDO;
 import lombok.*;
-import java.util.*;
 import com.baomidou.mybatisplus.annotation.*;
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
 
@@ -36,6 +34,18 @@ public class ModuleDO extends BaseDO {
      * 模块名称
      */
     private String name;
+    /**
+     * 模块标签
+     */
+    private String tag;
+    /**
+     * 依赖的中间件标签
+     */
+    private String midwareTags;
+    /**
+     * 依赖的镜像
+     */
+    private String imageTags;
     /**
      * 模块类型
      *

@@ -18,6 +18,9 @@ public class ProjectExportReqVO {
     @ApiModelProperty(value = "项目名称")
     private String name;
 
+    @ApiModelProperty(value = "项目配置")
+    private String projConf;
+
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     @ApiModelProperty(value = "开始创建时间")
     private Date beginCreateTime;

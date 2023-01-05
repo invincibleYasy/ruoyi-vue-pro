@@ -40,6 +40,10 @@ public class ProcessDO extends BaseDO {
      */
     private String name;
     /**
+     * 进程标签
+     */
+    private String tag;
+    /**
      * 进程版本
      */
     private String version;

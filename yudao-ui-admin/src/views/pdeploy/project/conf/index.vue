@@ -54,6 +54,7 @@
           <dynamic-dict-tag :options="projects" :value="scope.row.projectId"/>
         </template>
       </el-table-column>
+      <el-table-column label="配置标签" align="center" prop="tag" />
       <el-table-column label="键" align="center" prop="confKey"/>
       <el-table-column label="值" align="center" prop="confValue"/>
       <el-table-column label="是否需修改" align="center" prop="modifyFlag">

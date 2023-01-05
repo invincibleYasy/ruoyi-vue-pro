@@ -27,6 +27,15 @@ public class ModuleExcelVO {
     @ExcelProperty("模块名称")
     private String name;
 
+    @ExcelProperty("模块标签")
+    private String tag;
+
+    @ExcelProperty( "模块标签")
+    private String midwareTags;
+
+    @ExcelProperty(value = "镜像tags")
+    private String imageTags;
+
     @ExcelProperty(value = "模块类型", converter = DictConvert.class)
     @DictFormat("module_type") // TODO 代码优化：建议设置到对应的 XXXDictTypeConstants 枚举类中
     private Integer moduleType;

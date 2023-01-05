@@ -33,6 +33,10 @@ public class ProjectConfDO extends BaseDO {
      *  所属项目
      */
     private Long projectId;
+
+    private String tag;
+
+    private String tagFilter;
     /**
      * 键
      */

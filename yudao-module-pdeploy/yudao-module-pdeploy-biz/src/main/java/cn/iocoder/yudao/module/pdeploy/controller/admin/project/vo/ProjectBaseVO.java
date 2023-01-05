@@ -21,4 +21,7 @@ public class ProjectBaseVO {
     @ApiModelProperty(value = "备注")
     private String remark;
 
+    @ApiModelProperty(value = "项目配置")
+    private String projConf;
+
 }

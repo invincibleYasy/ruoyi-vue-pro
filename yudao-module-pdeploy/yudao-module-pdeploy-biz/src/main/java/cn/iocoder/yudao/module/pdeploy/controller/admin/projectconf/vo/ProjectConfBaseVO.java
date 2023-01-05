@@ -18,6 +18,12 @@ public class ProjectConfBaseVO {
     @ApiModelProperty(value = " 所属项目")
     private Long projectId;
 
+    @ApiModelProperty(value = "配置标签")
+    private String tag;
+
+    @ApiModelProperty(value = "标签过滤")
+    private String tagFilter;
+
     @ApiModelProperty(value = "键")
     private String confKey;
 
