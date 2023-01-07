@@ -5,7 +5,6 @@ public class AnsibleTask {
 
     private String name;
     private Boolean active;
-    private String tag;
 
     public String getName() {
         return name;

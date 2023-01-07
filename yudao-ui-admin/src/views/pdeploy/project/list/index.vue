@@ -12,10 +12,10 @@
       <el-form-item label="项目名称" prop="name">
         <el-input v-model="queryParams.name" placeholder="请输入项目名称" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
-<!--      <el-form-item label="创建时间">-->
-<!--        <el-date-picker v-model="dateRangeCreateTime" style="width: 240px" value-format="yyyy-MM-dd"-->
-<!--                        type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"/>-->
-<!--      </el-form-item>-->
+      <!--      <el-form-item label="创建时间">-->
+      <!--        <el-date-picker v-model="dateRangeCreateTime" style="width: 240px" value-format="yyyy-MM-dd"-->
+      <!--                        type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"/>-->
+      <!--      </el-form-item>-->
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
@@ -49,8 +49,23 @@
       <el-table-column label="项目名称" align="center" prop="name">
         <template slot-scope="scope">
           <router-link :to="'/project/info/' + scope.row.id" class="link-type">
-            <span>{{ scope.row.name }}</span>
+            <span>{{ scope.row.name }}</span><i
+            class="el-icon-view el-icon--right"></i>
           </router-link>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目配置Yaml" align="center">
+        <template slot-scope="scope">
+          <el-button type="text" @click="confShow(scope.row.projConfYaml)">项目配置Yaml<i
+            class="el-icon-view el-icon--right"></i>
+          </el-button>
+        </template>
+      </el-table-column>
+      <el-table-column label="项目配置Json" align="center">
+        <template slot-scope="scope">
+          <el-button type="text" @click="confShow(scope.row.projConfJson)">项目配置Json<i
+            class="el-icon-view el-icon--right"></i>
+          </el-button>
         </template>
       </el-table-column>
       <el-table-column label="创建时间" align="center" prop="createTime" width="180">
@@ -88,7 +103,7 @@
         </el-form-item>
         <el-form-item label="关联模块" prop="moduleIds">
           <el-select v-model="form.moduleIds" placeholder="请选择关联模块" filterable collapse-tags multiple>
-            <el-option v-for="dict in modules"
+            <el-option v-for="dict in modules.filter( mod => mod.baselineId == form.baselineId)"
                        :key="dict.id" :label="dict.name" :value="parseInt(dict.id)"/>
           </el-select>
         </el-form-item>
@@ -100,6 +115,9 @@
         <el-button type="primary" @click="submitForm">确 定</el-button>
         <el-button @click="cancel">取 消</el-button>
       </div>
+    </el-dialog>
+    <el-dialog title="配置信息" :visible.sync="showConf">
+      <Yaml :value="yamlData" height="500px"/>
     </el-dialog>
   </div>
 </template>
@@ -115,13 +133,18 @@ import {
 } from "@/api/pdeploy/project";
 import {getAllBaselines} from "../../../../api/pdeploy/baseline";
 import {getAllModules} from "../../../../api/pdeploy/module";
+import Yaml from '@/components/YamlEdit/index';
 
 
 export default {
   name: "Project",
-  components: {},
+  components: {
+    Yaml,
+  },
   data() {
     return {
+      showConf: false,
+      yamlData: undefined,
       baselines: [],
       modules: [],
       // 遮罩层
@@ -163,6 +186,14 @@ export default {
     });
   },
   methods: {
+    confShow(data) {
+      this.yamlData = data;
+      if (this.yamlData) {
+        this.showConf = true;
+      } else {
+        this.$modal.msgError("当前项目没有ansible配置！")
+      }
+    },
     /** 查询列表 */
     getList() {
       this.loading = true;

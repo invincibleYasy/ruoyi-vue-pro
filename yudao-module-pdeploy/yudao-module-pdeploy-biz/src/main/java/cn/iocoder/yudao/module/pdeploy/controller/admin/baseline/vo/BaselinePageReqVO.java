@@ -20,6 +20,12 @@ public class BaselinePageReqVO extends PageParam {
     @ApiModelProperty(value = "基线版本")
     private String version;
 
+    @ApiModelProperty(value = "基线配置yaml")
+    private String baselineConfYaml;
+
+    @ApiModelProperty(value = "基线配置json")
+    private String baselineConfJson;
+
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     @ApiModelProperty(value = "开始创建时间")
     private Date beginCreateTime;

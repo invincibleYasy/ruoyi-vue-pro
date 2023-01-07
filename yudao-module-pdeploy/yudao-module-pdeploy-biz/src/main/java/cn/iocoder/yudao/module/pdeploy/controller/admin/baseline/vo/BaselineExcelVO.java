@@ -23,11 +23,11 @@ public class BaselineExcelVO {
     @ExcelProperty("基线版本")
     private String version;
 
-    @ExcelProperty("主配置")
-    private String mainConf;
+    @ExcelProperty(value = "基线配置yaml")
+    private String baselineConfYaml;
 
-    @ExcelProperty("ccpass配置")
-    private String mainConfCcpass;
+    @ExcelProperty(value = "基线配置json")
+    private String baselineConfJson;
 
     @ExcelProperty("创建时间")
     private Date createTime;

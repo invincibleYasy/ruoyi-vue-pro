@@ -1,24 +1,26 @@
 package cn.iocoder.yudao.module.pdeploy.service.project;
 
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
-import cn.iocoder.yudao.framework.excel.core.convert.JsonConvert;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.framework.mybatis.core.query.QueryWrapperX;
 import cn.iocoder.yudao.module.pdeploy.controller.admin.module.vo.ModuleRespVO;
 import cn.iocoder.yudao.module.pdeploy.controller.admin.server.vo.ServerRespVO;
 import cn.iocoder.yudao.module.pdeploy.convert.server.ServerConvert;
+import cn.iocoder.yudao.module.pdeploy.dal.dataobject.DynamicVars;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.baseline.BaselineDO;
+import cn.iocoder.yudao.module.pdeploy.dal.dataobject.module.ModuleDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.process.ProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.projectconf.ProjectConfDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.server.ServerDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.serverprocess.ServerProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.baseline.BaselineMapper;
+import cn.iocoder.yudao.module.pdeploy.dal.mysql.module.ModuleMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectconf.ProjectConfMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectmodule.ProjectModuleMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.server.ServerMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.serverprocess.ServerProcessMapper;
 import cn.iocoder.yudao.module.pdeploy.service.projectmodule.ProjectModuleService;
 import cn.iocoder.yudao.module.pdeploy.service.server.ServerService;
-import com.google.common.collect.Lists;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -69,6 +71,8 @@ public class ProjectServiceImpl implements ProjectService {
     private ProjectModuleMapper projectModuleMapper;
     @Resource
     private BaselineMapper baselineMapper;
+    @Resource
+    private ModuleMapper moduleMapper;
 
 
     @Override
@@ -76,50 +80,99 @@ public class ProjectServiceImpl implements ProjectService {
     public Long createProject(ProjectCreateReqVO createReqVO) {
         // 插入
         ProjectDO project = ProjectConvert.INSTANCE.convert(createReqVO);
+        List<ModuleDO> moduleDOS = moduleMapper.selectBatchIds(createReqVO.getModuleIds());
+        wrapperProject(project, moduleDOS);
         projectMapper.insert(project);
-        // 返回
         //处理关联模块信息
-        projectModuleService.createProjectModule(project.getId(), createReqVO.getModuleIds());
+        projectModuleService.createProjectModule(project.getId(), moduleDOS);
         return project.getId();
     }
 
+    private void wrapperProject(ProjectDO project, List<ModuleDO> moduleDOS) {
+        Long baselineId = project.getBaselineId();
+        BaselineDO baselineDO = baselineMapper.selectById(baselineId);
+        project.setProjConfYaml(baselineDO.getBaselineConfYaml());
+        Yaml yaml = new Yaml();
+        DynamicVars dynamicVars = yaml.loadAs(baselineDO.getBaselineConfYaml(), DynamicVars.class);
+        project.setProjConfJson(JsonUtils.toJsonPrettyString(dynamicVars));
+        Set<String> allTags = moduleDOS.stream().map(ModuleDO::getTag).collect(Collectors.toSet());
+        allTags.add("basic");
+        allTags.add("all");
+        Set<String> midwareTags = moduleDOS.stream().map(moduleDO -> {
+            if (StringUtils.isNotEmpty(moduleDO.getMidwareTags())) {
+                return Arrays.asList(moduleDO.getMidwareTags().split(","));
+            }
+            return null;
+        }).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toSet());
+        allTags.addAll(midwareTags);
+        project.setAllProjTags(String.join(",", allTags));
+
+    }
+
     private void batchSaveProjectConf(Long projectId, Long baselineId) {
+        Map<String, Object> projConfQuery = new HashMap<>();
+        projConfQuery.put("project_id", projectId);
+        ProjectConfDO lastBaselineConf = projectConfMapper.selectOne(new QueryWrapperX<ProjectConfDO>()
+                .eq("project_id", -1)
+                .eqIfPresent("baseline_id", baselineId)
+                .orderByDesc("id").limit1());
+        ProjectConfDO lastProjectConf = projectConfMapper.selectOne(new QueryWrapperX<ProjectConfDO>()
+                .eq("project_id", projectId)
+                .orderByDesc("id").limit1());
+        if (null != lastProjectConf && null != lastBaselineConf && lastProjectConf.getId() > lastBaselineConf.getId()) {
+            return;
+        }
+        ProjectDO projectDO = projectMapper.selectById(projectId);
+        if (StringUtils.isEmpty(projectDO.getAllProjTags())) {
+            return;
+        }
+
+        List<String> allTags = new ArrayList<>(Arrays.asList(projectDO.getAllProjTags().split(",")));
         //根据基线生成项目配置
         List<ProjectConfDO> baselineConfDOS = projectConfMapper.selectList(new LambdaQueryWrapperX<ProjectConfDO>()
                 .eqIfPresent(ProjectConfDO::getProjectId, -1)
-                .eqIfPresent(ProjectConfDO::getBaselineId, baselineId));
+                .eqIfPresent(ProjectConfDO::getBaselineId, baselineId)
+                .inIfPresent(ProjectConfDO::getTag, allTags)
+        );
 
+        projectConfMapper.deleteByMap(projConfQuery);
         if (CollectionUtils.isNotEmpty(baselineConfDOS)) {
             List<ProjectConfDO> collect = baselineConfDOS.stream()
-                    .filter(ProjectConfDO::getModifyFlag)
+                    .filter(projectConfDO -> {
+                        if (projectConfDO.getModifyFlag()) {
+                            List<String> customMidwareTags = new ArrayList<>();
+                            if (null != projectDO.getMidwareCustomTags()) {
+                                customMidwareTags.addAll(Arrays.asList(projectDO.getMidwareCustomTags().split(",")));
+                            }
+                            List<String> confTagFilters = Arrays.asList(projectConfDO.getTagFilter().split(","));
+                            // 有自定义的中间件，需要过滤中间件配置
+                            if (customMidwareTags.contains(projectConfDO.getTag())) {
+                                List<String> newTagFilters = new ArrayList<>();
+                                newTagFilters.add("custom");
+                                newTagFilters.addAll(allTags);
+                                return newTagFilters.containsAll(confTagFilters);
+                            }
+                            return allTags.containsAll(confTagFilters);
+                        }
+                        return false;
+                    })
                     .map(baselineConfDO -> {
                                 ProjectConfDO build = ProjectConfDO.builder()
                                         .projectId(projectId)
                                         .baselineId(baselineId)
+                                        .tag(baselineConfDO.getTag())
+                                        .tagFilter(baselineConfDO.getTagFilter())
                                         .modifyFlag(baselineConfDO.getModifyFlag())
                                         .confKey(baselineConfDO.getConfKey())
                                         .keyDesc(baselineConfDO.getKeyDesc())
                                         .confValue(baselineConfDO.getConfValue())
                                         .type(baselineConfDO.getType())
                                         .version(baselineConfDO.getVersion())
+                                        .confValue(baselineConfDO.getConfValue())
                                         .build();
-                                String confValue = baselineConfDO.getConfValue();
-                                if (JsonUtils.isJson(confValue)) {
-                                    List<Object> values = JsonUtils.parseArray(confValue, Object.class);
-                                    List<Object> valueList = new ArrayList<>();
-                                    values.forEach(value -> {
-                                        valueList.add("基线值-" + value);
-                                    });
-                                    build.setConfValue(JsonUtils.toJsonString(valueList));
-                                } else {
-                                    build.setConfValue("基线值-" + confValue);
-                                }
                                 return build;
                             }
                     ).collect(Collectors.toList());
-            Map<String, Object> delParams = new HashMap<>();
-            delParams.put("project_id", projectId);
-            projectConfMapper.deleteByMap(delParams);
             projectConfMapper.insertBatch(collect);
         }
     }
@@ -130,8 +183,11 @@ public class ProjectServiceImpl implements ProjectService {
         this.validateProjectExists(updateReqVO.getId());
         // 更新
         ProjectDO updateObj = ProjectConvert.INSTANCE.convert(updateReqVO);
-        projectModuleService.createProjectModule(updateReqVO.getId(), updateReqVO.getModuleIds());
+        List<ModuleDO> moduleDOS = moduleMapper.selectBatchIds(updateReqVO.getModuleIds());
+        wrapperProject(updateObj, moduleDOS);
         projectMapper.updateById(updateObj);
+        // 更新项目模块关系
+        projectModuleService.createProjectModule(updateReqVO.getId(), moduleDOS);
     }
 
     @Override
@@ -300,13 +356,13 @@ public class ProjectServiceImpl implements ProjectService {
         if (null == baselineDO) {
             return projectConfRespVO;
         }
-        String mainConf = baselineDO.getMainConf();
+        String mainConf = baselineDO.getBaselineConfYaml();
         LinkedHashMap mainConfMap = null;
         Yaml mainConfYaml = new Yaml();
         if (StringUtils.isNotEmpty(mainConf)) {
             mainConfMap = mainConfYaml.loadAs(mainConf, LinkedHashMap.class);
         }
-        String mainConfCcpass = baselineDO.getMainConfCcpass();
+        String mainConfCcpass = baselineDO.getBaselineConfJson();
         LinkedHashMap mainConfCcpassMap = null;
         Yaml mainConfCcpassYaml = new Yaml();
         if (StringUtils.isNotEmpty(mainConfCcpass)) {

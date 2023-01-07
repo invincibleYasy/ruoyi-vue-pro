@@ -21,7 +21,16 @@ public class ProjectBaseVO {
     @ApiModelProperty(value = "备注")
     private String remark;
 
-    @ApiModelProperty(value = "项目配置")
-    private String projConf;
+    @ApiModelProperty(value = "项目配置Yaml")
+    private String projConfYaml;
+
+    @ApiModelProperty(value = "项目配置Json")
+    private String projConfJson;
+
+    @ApiModelProperty(value = "自定义中间件")
+    private String midwareCustomTags;
+
+    @ApiModelProperty(value = "项目关联Tag")
+    private String allProjTags;
 
 }

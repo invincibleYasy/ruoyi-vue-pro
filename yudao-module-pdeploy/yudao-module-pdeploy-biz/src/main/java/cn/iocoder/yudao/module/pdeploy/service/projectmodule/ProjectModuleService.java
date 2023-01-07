@@ -70,7 +70,7 @@ public interface ProjectModuleService {
      */
     List<ProjectModuleDO> getProjectModuleList(ProjectModuleExportReqVO exportReqVO);
 
-    void createProjectModule(Long projectId, Set<Long> moduleIds);
+    void createProjectModule(Long projectId, List<ModuleDO> moduleDOS);
 
     Set<Long> getModuleIdsByProjectId(Long projectId);
 

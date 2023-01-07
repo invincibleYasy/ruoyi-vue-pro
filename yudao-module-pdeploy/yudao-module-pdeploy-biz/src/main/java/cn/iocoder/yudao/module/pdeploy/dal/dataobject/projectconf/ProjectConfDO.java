@@ -45,6 +45,8 @@ public class ProjectConfDO extends BaseDO {
      * 值
      */
     private String confValue;
+
+    private String confValuePlaceholder;
     /**
      * 是否需修改
      *

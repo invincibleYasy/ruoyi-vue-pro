@@ -36,11 +36,11 @@ public class BaselineDO extends BaseDO {
     /**
      * 主配置
      */
-    private String mainConf;
+    private String baselineConfYaml;
     /**
      * ccpass配置
      */
-    private String mainConfCcpass;
+    private String baselineConfJson;
     /**
      * 备注
      */

@@ -102,16 +102,17 @@ public class ProjectModuleServiceImpl implements ProjectModuleService {
     }
 
     @Override
-    public void createProjectModule(Long projectId, Set<Long> moduleIds) {
+    public void createProjectModule(Long projectId, List<ModuleDO> moduleDOS) {
         Map<String, Object> params = new HashMap<>();
         params.put("project_id", projectId);
         projectModuleMapper.deleteByMap(params);
-        if (CollectionUtils.isNotEmpty(moduleIds)) {
+        if (CollectionUtils.isNotEmpty(moduleDOS)) {
             List<ProjectModuleDO> serverProcessDOS = new ArrayList<>();
-            moduleIds.forEach(moduleId -> {
+            moduleDOS.forEach(moduleDO -> {
                 ProjectModuleDO projectModuleDO = new ProjectModuleDO();
                 projectModuleDO.setProjectId(projectId);
-                projectModuleDO.setModuleId(moduleId);
+                projectModuleDO.setModuleId(moduleDO.getId());
+                projectModuleDO.setModuleTag(moduleDO.getTag());
                 serverProcessDOS.add(projectModuleDO);
             });
             projectModuleMapper.insertBatch(serverProcessDOS);

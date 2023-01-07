@@ -38,6 +38,9 @@ public class ProjectConfExcelVO {
     @ExcelProperty("值")
     private String confValue;
 
+    @ExcelProperty(value = "值占位符")
+    private String confValuePlaceholder;
+
     @ExcelProperty(value = "是否需修改", converter = DictConvert.class)
     @DictFormat("infra_boolean_string") // TODO 代码优化：建议设置到对应的 XXXDictTypeConstants 枚举类中
     private Boolean modifyFlag;

@@ -1,8 +1,7 @@
 package cn.iocoder.yudao.module.pdeploy.dal.dataobject;
 
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DynamicVars {
 
@@ -30,9 +29,9 @@ public class DynamicVars {
 
     private BaseVars basic_info;
 
-    private Map<String,BaseVars> midwares;
+    private Map<String, BaseVars> midwares;
 
-    private Map<String,BaseVars> models;
+    private Map<String, BaseVars> models;
 
     public List<DnsCheck> getDns_check() {
         return dns_check;
@@ -90,6 +89,14 @@ public class DynamicVars {
         this.models = models;
     }
 
+    public List<AnsibleTask> getPost_check_tasks() {
+        return post_check_tasks;
+    }
+
+    public void setPost_check_tasks(List<AnsibleTask> post_check_tasks) {
+        this.post_check_tasks = post_check_tasks;
+    }
+
     public List<AnsibleTask> getRabbitmq_init_tasks() {
         return rabbitmq_init_tasks;
     }
@@ -136,13 +143,5 @@ public class DynamicVars {
 
     public void setPostgresql_init_tasks(List<AnsibleTask> postgresql_init_tasks) {
         this.postgresql_init_tasks = postgresql_init_tasks;
-    }
-
-    public List<AnsibleTask> getPost_check_tasks() {
-        return post_check_tasks;
-    }
-
-    public void setPost_check_tasks(List<AnsibleTask> post_check_tasks) {
-        this.post_check_tasks = post_check_tasks;
     }
 }

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.pdeploy.controller.admin.baseline.vo;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.*;
 import java.util.*;
 import io.swagger.annotations.*;
@@ -17,6 +18,12 @@ public class BaselineExportReqVO {
 
     @ApiModelProperty(value = "基线版本")
     private String version;
+
+    @ApiModelProperty(value = "基线配置yaml")
+    private String baselineConfYaml;
+
+    @ApiModelProperty(value = "基线配置json")
+    private String baselineConfJson;
 
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     @ApiModelProperty(value = "开始创建时间")

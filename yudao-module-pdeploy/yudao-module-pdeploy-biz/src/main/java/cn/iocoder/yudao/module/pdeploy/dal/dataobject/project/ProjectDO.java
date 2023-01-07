@@ -31,6 +31,14 @@ public class ProjectDO extends BaseDO {
      * 枚举 {@link TODO system_user_sex 对应的类}
      */
     private Long baselineId;
+
+    private String projConfYaml;
+
+    private String projConfJson;
+
+    private String midwareCustomTags;
+
+    private String allProjTags;
     /**
      * 项目名称
      */

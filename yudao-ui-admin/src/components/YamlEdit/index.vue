@@ -1,6 +1,6 @@
 <template>
   <div class="json-editor">
-    <textarea ref="textarea" />
+    <textarea ref="textarea"/>
   </div>
 </template>
 
@@ -10,6 +10,7 @@ import 'codemirror/lib/codemirror.css'
 // 替换主题这里需修改名称
 import 'codemirror/theme/idea.css'
 import 'codemirror/mode/yaml/yaml'
+
 export default {
   props: {
     value: {
@@ -19,6 +20,11 @@ export default {
     height: {
       type: String,
       required: true
+    },
+    readOnly: {
+      type: Boolean,
+      default: false,
+      required: false
     }
   },
   data() {
@@ -35,7 +41,7 @@ export default {
     },
     height(value) {
       this.editor.setSize('auto', this.height)
-    }
+    },
   },
   mounted() {
     this.editor = CodeMirror.fromTextArea(this.$refs.textarea, {
@@ -47,7 +53,7 @@ export default {
       cursorHeight: 0.9,
       // 替换主题这里需修改名称
       theme: 'idea',
-      readOnly: true
+      readOnly: this.readOnly
     })
     this.editor.setSize('auto', this.height)
     this.editor.setValue(this.value)
@@ -65,20 +71,23 @@ export default {
 </script>
 
 <style scoped>
-  .json-editor{
-    height: 100%;
-    margin-bottom: 10px;
-  }
-  .json-editor >>> .CodeMirror {
-    font-size: 13px;
-    /*overflow-y:auto;*/
-    font-weight:normal
-  }
-  .json-editor >>> .CodeMirror-vscrollbar{
-    right: 0;
-    top: 0;
-  }
-  .json-editor >>> .cm-s-rubyblue span.cm-string {
-    color: #F08047;
-  }
+.json-editor {
+  height: 100%;
+  margin-bottom: 10px;
+}
+
+.json-editor >>> .CodeMirror {
+  font-size: 13px;
+  /*overflow-y:auto;*/
+  font-weight: normal
+}
+
+.json-editor >>> .CodeMirror-vscrollbar {
+  right: 0;
+  top: 0;
+}
+
+.json-editor >>> .cm-s-rubyblue span.cm-string {
+  color: #F08047;
+}
 </style>

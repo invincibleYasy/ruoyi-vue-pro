@@ -2,17 +2,20 @@ package cn.iocoder.yudao.module.pdeploy.service.baseline;
 
 
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
-import cn.iocoder.yudao.module.pdeploy.dal.dataobject.AnsibleService;
-import cn.iocoder.yudao.module.pdeploy.dal.dataobject.BaseVars;
-import cn.iocoder.yudao.module.pdeploy.dal.dataobject.DynamicVars;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.iocoder.yudao.module.pdeploy.dal.dataobject.*;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.module.ModuleDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.moduleprocess.ModuleProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.process.ProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.projectconf.ProjectConfDO;
+import cn.iocoder.yudao.module.pdeploy.dal.dataobject.projectmodule.ProjectModuleDO;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.module.ModuleMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.moduleprocess.ModuleProcessMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.process.ProcessMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectconf.ProjectConfMapper;
+import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectmodule.ProjectModuleMapper;
+import io.swagger.util.Json;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -25,6 +28,8 @@ import javax.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import cn.iocoder.yudao.module.pdeploy.controller.admin.baseline.vo.*;
@@ -33,6 +38,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 
 import cn.iocoder.yudao.module.pdeploy.convert.baseline.BaselineConvert;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.baseline.BaselineMapper;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -45,6 +51,7 @@ import static cn.iocoder.yudao.module.pdeploy.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class BaselineServiceImpl implements BaselineService {
 
     @Resource
@@ -59,21 +66,50 @@ public class BaselineServiceImpl implements BaselineService {
     private ProcessMapper processMapper;
     @Resource
     private ModuleProcessMapper moduleProcessMapper;
+    @Resource
+    private ProjectModuleMapper projectModuleMapper;
 
     @Override
     public Long createBaseline(BaselineCreateReqVO createReqVO) {
         // 插入
         BaselineDO baseline = BaselineConvert.INSTANCE.convert(createReqVO);
-        baselineMapper.insert(baseline);
         Yaml yaml = new Yaml();
-        DynamicVars dynamicVars = yaml.loadAs(createReqVO.getMainConf(), DynamicVars.class);
+        DynamicVars confYaml = yaml.loadAs(createReqVO.getBaselineConfYaml(), DynamicVars.class);
+        String baselineConfJson = JsonUtils.toJsonPrettyString(confYaml);
+        baseline.setBaselineConfJson(baselineConfJson);
+        baselineMapper.insert(baseline);
         //异步更新
-        executor.submit(() -> parseDynamicVars(baseline.getId(), dynamicVars));
+        executor.submit(() -> parseDynamicVars(baseline));
         // 返回
         return baseline.getId();
     }
 
-    private void parseDynamicVars(Long id, DynamicVars dynamicVars) {
+    @Override
+    public void updateBaseline(BaselineUpdateReqVO updateReqVO) {
+        // 校验存在
+        this.validateBaselineExists(updateReqVO.getId());
+        // 更新
+        BaselineDO updateObj = BaselineConvert.INSTANCE.convert(updateReqVO);
+        Yaml yaml = new Yaml();
+        DynamicVars confYaml = yaml.loadAs(updateReqVO.getBaselineConfYaml(), DynamicVars.class);
+        String baselineConfJson = JsonUtils.toJsonPrettyString(confYaml);
+        updateObj.setBaselineConfJson(baselineConfJson);
+        baselineMapper.updateById(updateObj);
+        //异步更新
+        Future<?> submit = executor.submit(() -> parseDynamicVars(updateObj));
+        try {
+            submit.get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void parseDynamicVars(BaselineDO baselineDO) {
+        Long id = baselineDO.getId();
+        String baselineConfJson = baselineDO.getBaselineConfJson();
+        DynamicVars dynamicVars = JsonUtils.parseObject(baselineConfJson, DynamicVars.class);
         if (null != dynamicVars) {
             // 1. 删除当前基线下的模块信息和进程信息
             List<ModuleDO> moduleDOS = moduleMapper.selectList("baseline_id", id);
@@ -105,7 +141,14 @@ public class BaselineServiceImpl implements BaselineService {
             parseMidWares(id, dynamicVars);
             // 解析模块信息
             parseModels(id, dynamicVars);
-
+            // 更新占位符
+            DumperOptions options = new DumperOptions();
+            options.setIndentWithIndicator(true);
+            options.setIndicatorIndent(2);
+            Yaml yaml = new Yaml(new RepresenterNull2Empty(), options);
+            String dump = yaml.dumpAsMap(dynamicVars);
+            BaselineDO build = BaselineDO.builder().id(id).baselineConfYaml(dump).build();
+            baselineMapper.updateById(build);
         }
     }
 
@@ -113,7 +156,6 @@ public class BaselineServiceImpl implements BaselineService {
     private void parseBaseConf(Long id, DynamicVars dynamicVars) {
         BaseVars basic_info = dynamicVars.getBasic_info();
         if (null != basic_info) {
-            String tag = basic_info.getTag();
             Map<String, Object> vars = basic_info.getVars();
             if (MapUtils.isNotEmpty(vars)) {
                 List<ProjectConfDO> projectConfDOS = new ArrayList<>();
@@ -124,17 +166,20 @@ public class BaselineServiceImpl implements BaselineService {
                     if (confValue instanceof Collection) {
                         confValue = JsonUtils.toJsonString(confValue);
                     }
+                    String confValuePlaceholder = "basic_" + confKey;
                     ProjectConfDO confDO = ProjectConfDO.builder()
                             .projectId(-1l)
                             .baselineId(id)
-                            .tag(StringUtils.isEmpty(tag) ? "basic" : tag)
+                            .tag("basic")
                             .confKey(confKey)
                             .tagFilter(genTagFilter(confKey))
                             .confValue(confValue.toString())
+                            .confValuePlaceholder(confValuePlaceholder)
                             .type(1)
                             .modifyFlag(true)
                             .build();
                     projectConfDOS.add(confDO);
+                    vars.put(confKey, confValuePlaceholder);
                 });
                 projectConfMapper.insertBatch(projectConfDOS);
             }
@@ -143,6 +188,13 @@ public class BaselineServiceImpl implements BaselineService {
     }
 
     private void parseAnsibleTasks(Long id, DynamicVars dynamicVars) {
+        List<AnsibleTask> elasticsearch_init_tasks = dynamicVars.getElasticsearch_init_tasks();
+        List<AnsibleTask> minio_init_tasks = dynamicVars.getMinio_init_tasks();
+        List<AnsibleTask> mysql_init_tasks = dynamicVars.getMysql_init_tasks();
+        List<AnsibleTask> postgresql_init_tasks = dynamicVars.getPostgresql_init_tasks();
+        List<AnsibleTask> rabbitmq_init_tasks = dynamicVars.getRabbitmq_init_tasks();
+        List<AnsibleTask> rocketmq_init_tasks = dynamicVars.getRocketmq_init_tasks();
+        List<AnsibleTask> post_check_tasks = dynamicVars.getPost_check_tasks();
 
     }
 
@@ -167,6 +219,7 @@ public class BaselineServiceImpl implements BaselineService {
             moduleDO.setTag(key);
             moduleDO.setName(StringUtils.isEmpty(value.getName()) ? key : value.getName());
             moduleDO.setModuleType(type);
+            // 解析中间件依赖
             List<String> midwareTags = value.getMidware_tags();
             if (CollectionUtils.isNotEmpty(midwareTags)) {
                 moduleDO.setMidwareTags(String.join(",", midwareTags));
@@ -177,6 +230,10 @@ public class BaselineServiceImpl implements BaselineService {
                 moduleDO.setImageTags(String.join(",", image_tags.values()));
             }
             moduleMapper.insert(moduleDO);
+            // 更新历史的项目模块关系
+            projectModuleMapper.update(ProjectModuleDO.builder().moduleId(moduleDO.getId()).build(),
+                    new LambdaQueryWrapperX<ProjectModuleDO>().eqIfPresent(ProjectModuleDO::getModuleTag, moduleDO.getTag()));
+            // 解析进程信息
             List<AnsibleService> ansibleServices = value.getAnsible_services();
             if (CollectionUtils.isNotEmpty(ansibleServices)) {
                 List<ProcessDO> processDOS = new ArrayList<>();
@@ -216,6 +273,7 @@ public class BaselineServiceImpl implements BaselineService {
                             .tagFilter(genTagFilter(confKey))
                             .confKey(confKey)
                             .confValue(confValue.toString())
+                            .confValuePlaceholder(key + "_" + confKey)
                             .type(1)
                             .modifyFlag(true)
                             .build();
@@ -232,7 +290,7 @@ public class BaselineServiceImpl implements BaselineService {
             if (splits.length > 0) {
                 String split = splits[0];
                 String[] arrTagFilters = split.split("_");
-                List<String> collect = Arrays.asList(arrTagFilters).stream().sorted().collect(Collectors.toList());
+                List<String> collect = new ArrayList<>(Arrays.asList(arrTagFilters));
                 return String.join(",", collect);
             }
         }
@@ -265,19 +323,6 @@ public class BaselineServiceImpl implements BaselineService {
         }
     }
 
-    @Override
-    public void updateBaseline(BaselineUpdateReqVO updateReqVO) {
-        // 校验存在
-        this.validateBaselineExists(updateReqVO.getId());
-        // 更新
-        BaselineDO updateObj = BaselineConvert.INSTANCE.convert(updateReqVO);
-        baselineMapper.updateById(updateObj);
-        Yaml yaml = new Yaml();
-        DynamicVars dynamicVars = yaml.loadAs(updateReqVO.getMainConf(), DynamicVars.class);
-        //异步更新
-        executor.submit(() -> parseDynamicVars(updateReqVO.getId(), dynamicVars));
-
-    }
 
     @Override
     public void deleteBaseline(Long id) {

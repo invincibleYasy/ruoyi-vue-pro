@@ -34,4 +34,5 @@ public class ProjectModuleDO extends BaseDO {
      */
     private Long moduleId;
 
+    private String moduleTag;
 }

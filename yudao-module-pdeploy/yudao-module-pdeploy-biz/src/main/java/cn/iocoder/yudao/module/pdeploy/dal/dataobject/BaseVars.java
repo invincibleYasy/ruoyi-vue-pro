@@ -1,28 +1,25 @@
 package cn.iocoder.yudao.module.pdeploy.dal.dataobject;
 
 
+import cn.iocoder.yudao.module.pdeploy.service.project.DynamicVarsValFilter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.List;
 import java.util.Map;
-
+@JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DynamicVarsValFilter.class)
 public class BaseVars {
+    @JsonIgnore
     private String name;
-    private String tag;
 
     private Map<String, String> image_tags;
 
     private Map<String, Object> vars;
 
+    @JsonIgnore
     private List<AnsibleService> ansible_services;
-
+    @JsonIgnore
     private List<String> midware_tags;
-
-    public String getTag() {
-        return tag;
-    }
-
-    public void setTag(String tag) {
-        this.tag = tag;
-    }
 
     public Map<String, String> getImage_tags() {
         return image_tags;

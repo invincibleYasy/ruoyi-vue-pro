@@ -19,7 +19,16 @@ public class ProjectExportReqVO {
     private String name;
 
     @ApiModelProperty(value = "项目配置")
-    private String projConf;
+    private String projConfYaml;
+
+    @ApiModelProperty(value = "项目配置Json")
+    private String projConfJson;
+
+    @ApiModelProperty(value = "自定义中间件")
+    private String midwareCustomTags;
+
+    @ApiModelProperty(value = "项目关联Tag")
+    private String allProjTags;
 
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     @ApiModelProperty(value = "开始创建时间")

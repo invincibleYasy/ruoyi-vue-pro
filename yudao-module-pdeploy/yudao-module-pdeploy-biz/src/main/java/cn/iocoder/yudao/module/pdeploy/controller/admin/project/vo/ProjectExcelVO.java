@@ -28,7 +28,16 @@ public class ProjectExcelVO {
     private String name;
 
     @ExcelProperty(value = "项目配置")
-    private String projConf;
+    private String projConfYaml;
+
+    @ExcelProperty(value = "项目配置Json")
+    private String projConfJson;
+
+    @ExcelProperty(value = "自定义中间件")
+    private String midwareCustomTags;
+
+    @ExcelProperty(value = "项目关联Tag")
+    private String allProjTags;
 
     @ExcelProperty("创建时间")
     private Date createTime;

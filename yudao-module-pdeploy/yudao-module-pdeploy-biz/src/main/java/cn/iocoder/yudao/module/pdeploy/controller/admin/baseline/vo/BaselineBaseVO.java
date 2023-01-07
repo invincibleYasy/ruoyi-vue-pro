@@ -20,11 +20,11 @@ public class BaselineBaseVO {
 //    @NotNull(message = "基线版本不能为空")
     private String version;
 
-    @ApiModelProperty(value = "主配置")
-    private String mainConf;
+    @ApiModelProperty(value = "基线配置yaml")
+    private String baselineConfYaml;
 
-    @ApiModelProperty(value = "ccpass配置")
-    private String mainConfCcpass;
+    @ApiModelProperty(value = "基线配置json")
+    private String baselineConfJson;
 
     @ApiModelProperty(value = "备注")
     private String remark;

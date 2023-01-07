@@ -32,6 +32,9 @@ public class ProjectConfPageReqVO extends PageParam {
     @ApiModelProperty(value = "值")
     private String confValue;
 
+    @ApiModelProperty(value = "值占位符")
+    private String confValuePlaceholder;
+
     @ApiModelProperty(value = "是否需修改")
     private Boolean modifyFlag;
 

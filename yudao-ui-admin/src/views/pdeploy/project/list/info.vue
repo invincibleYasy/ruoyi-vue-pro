@@ -225,6 +225,9 @@
               <config-list :source="2" :super-project-id="project.id"
                            :super-baseline-id="project.baselineId"/>
             </el-tab-pane>
+            <el-tab-pane name="confUpdatePro" label="配置修改(高级)">
+              <Yaml :value="project.projConfYaml" height="800px"/>
+            </el-tab-pane>
           </el-tabs>
         </el-row>
       </div>
@@ -233,14 +236,7 @@
         <el-row :gutter="0">
           <el-tabs active-name="ansibleConf" type="border-card" @tab-click="tabSelect">
             <el-tab-pane name="ansibleConf" label="ansible配置">
-              <el-col :span="12">
-                <el-tag>主配置</el-tag>
-                <Yaml :value="mainConf" height="800px"/>
-              </el-col>
-              <el-col :span="12">
-                <el-tag>CCPASS配置</el-tag>
-                <Yaml :value="ccpassConf" height="800px"/>
-              </el-col>
+              <Yaml :value="project.projConfYaml" height="800px" read-only/>
             </el-tab-pane>
             <el-tab-pane name="ansibleHosts" label="ansibleHosts">
               <div style="border: 1px solid #f1e8e8;">
@@ -495,7 +491,10 @@ export default {
   },
   methods: {
     tabSelect(data) {
-      this.activeTab = data.name;
+      getProject(this.$route.params && this.$route.params.projectId).then(res => {
+        this.project = res.data;
+        this.activeTab = data.name;
+      });
     },
     replaceMidware(item) {
       console.log("replaceMidware:", item)
@@ -503,7 +502,7 @@ export default {
     },
     prev() {
       this.activeStep--;
-      if (this.activeStep === 0){
+      if (this.activeStep === 0) {
         return;
       }
       // ansible配置
@@ -513,7 +512,7 @@ export default {
     },
     next() {
       this.activeStep++;
-      if (this.activeStep === 4){
+      if (this.activeStep === 4) {
         return;
       }
       // ansible配置
