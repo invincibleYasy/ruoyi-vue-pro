@@ -134,7 +134,7 @@ public class BaselineServiceImpl implements BaselineService {
             // 解析基础配置
             parseBaseConf(id, dynamicVars);
             // 解析中间件配置
-            parseMidwaresConfig(id,dynamicVars);
+            parseMidwaresConfig(id, dynamicVars);
             // 解析中间件初始化信息
             parseMidwaresInit(id, dynamicVars);
             // 解析中间件信息
@@ -166,12 +166,14 @@ public class BaselineServiceImpl implements BaselineService {
             parse(id, midwaresInit, 4);
         }
     }
+
     private void parseMidwaresConfig(Long id, DynamicVars dynamicVars) {
-        Map<String, BaseVars> midwaresConfig = dynamicVars.getMidwares_config();
+        Map<String, BaseVars> midwaresConfig = dynamicVars.getMidwares_custom();
         if (MapUtils.isNotEmpty(midwaresConfig)) {
             parse(id, midwaresConfig, 6);
         }
     }
+
     private void parseMidWares(Long id, DynamicVars dynamicVars) {
         Map<String, BaseVars> midwares = dynamicVars.getMidwares();
         if (MapUtils.isNotEmpty(midwares)) {
@@ -248,7 +250,7 @@ public class BaselineServiceImpl implements BaselineService {
                             .confKey(confKey)
                             .confValue(confValue)
                             .confValuePlaceholder(key + "_" + confKey)
-                            .type(2)
+                            .type(6 == type ? 3 : 2)
                             .modifyFlag(true)
                             .build();
                     projectConfDOS.add(confDO);

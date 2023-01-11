@@ -190,29 +190,9 @@
                 </el-table>
               </div>
             </el-tab-pane>
-            <el-tab-pane name="midwarePlan" label="中间件选择">
-              <div class="midware-plan">
-                <el-table :v-loading="true" v-if="modifyServers[0]" :data="modifyServers[0].processes">
-                  <el-table-column label="基线版本" align="center" prop="baselineId">
-                    <template slot-scope="scope">
-                      <dynamic-dict-tag :options="baselines" :value="scope.row.baselineId"/>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="进程名称" align="center" prop="name"/>
-                  <el-table-column label="进程类型" align="center" prop="processType">
-                    <template slot-scope="scope">
-                      <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="标签" align="center">Mysql</el-table-column>
-                  <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-                    <template slot-scope="scope">
-                      <el-button size="mini" type="text" icon="el-icon-edit" @click="replaceMidware(scope.row)">替换
-                      </el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
+            <el-tab-pane name="midwarePlan" label="中间件配置更改">
+              <config-list :source="2" :super-project-id="project.id"
+                           :super-baseline-id="project.baselineId"/>
             </el-tab-pane>
           </el-tabs>
         </el-row>

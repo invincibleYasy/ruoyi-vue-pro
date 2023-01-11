@@ -11,7 +11,7 @@ public class DynamicVars {
 
     private Map<String, BaseVars> midwares_init;
 
-    private Map<String,BaseVars> midwares_config;
+    private Map<String,BaseVars> midwares_custom;
 
     private Map<String, BaseVars> env;
 
@@ -59,11 +59,11 @@ public class DynamicVars {
         this.env = env;
     }
 
-    public Map<String, BaseVars> getMidwares_config() {
-        return midwares_config;
+    public Map<String, BaseVars> getMidwares_custom() {
+        return midwares_custom;
     }
 
-    public void setMidwares_config(Map<String, BaseVars> midwares_config) {
-        this.midwares_config = midwares_config;
+    public void setMidwares_custom(Map<String, BaseVars> midwares_custom) {
+        this.midwares_custom = midwares_custom;
     }
 }

@@ -18,7 +18,7 @@
       <el-form-item label="配置键" prop="confKey">
         <el-input v-model="queryParams.confKey" placeholder="请输入键" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
-      <el-form-item label="Modify" prop="modifyFlag">
+      <el-form-item label="Modify" prop="modifyFlag" v-if="source === 1">
         <el-select v-model="queryParams.modifyFlag" placeholder="请选择是否需修改" clearable size="small">
           <el-option v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_YES_NO)"
                      :key="dict.value" :label="dict.label" :value="dict.value"/>
@@ -54,7 +54,7 @@
           <dynamic-dict-tag :options="projects" :value="scope.row.projectId"/>
         </template>
       </el-table-column>
-      <el-table-column label="配置标签" align="center" prop="tag" />
+      <el-table-column label="配置标签" align="center" prop="tag"/>
       <el-table-column label="键" align="center" prop="confKey"/>
       <el-table-column label="值" align="center" prop="confValue"/>
       <el-table-column label="是否需修改" align="center" prop="modifyFlag">
@@ -155,6 +155,10 @@ export default {
       type: Number,
       default: 1,
     },
+    superConfType: {
+      type: Number,
+      default: undefined
+    },
     superProjectId: {
       type: Number,
       default: undefined,
@@ -211,6 +215,9 @@ export default {
     }
     if (this.superBaselineId) {
       this.queryParams.baselineId = this.superBaselineId;
+    }
+    if (this.superConfType) {
+      this.queryParams.type = this.superConfType;
     }
     getAllProjects().then(res => {
       this.projects = this.projects.concat(res.data.list);
