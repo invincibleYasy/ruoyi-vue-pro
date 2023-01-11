@@ -24,6 +24,9 @@ public class ProcessBaseVO {
     @ApiModelProperty(value = "进程标签")
     private String tag;
 
+    @ApiModelProperty(value = "过滤标签")
+    private String tagFilter;
+
     @ApiModelProperty(value = "进程版本")
     private String version;
 

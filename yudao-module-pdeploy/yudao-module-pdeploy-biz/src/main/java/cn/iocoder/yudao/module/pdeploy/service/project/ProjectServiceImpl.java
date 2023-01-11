@@ -85,6 +85,8 @@ public class ProjectServiceImpl implements ProjectService {
         projectMapper.insert(project);
         //处理关联模块信息
         projectModuleService.createProjectModule(project.getId(), moduleDOS);
+        //生成项目配置信息
+        batchSaveProjectConf(project.getId(),project.getBaselineId());
         return project.getId();
     }
 
@@ -188,6 +190,8 @@ public class ProjectServiceImpl implements ProjectService {
         projectMapper.updateById(updateObj);
         // 更新项目模块关系
         projectModuleService.createProjectModule(updateReqVO.getId(), moduleDOS);
+        // 生成项目配置信息
+        batchSaveProjectConf(updateObj.getId(),updateObj.getBaselineId());
     }
 
     @Override

@@ -7,35 +7,22 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.List;
 import java.util.Map;
-@JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DynamicVarsValFilter.class)
+
 public class BaseVars {
-    @JsonIgnore
+//    @JsonIgnore
     private String name;
 
-    private Map<String, String> image_tags;
+//    @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DynamicVarsValFilter.class)
+    private Map<String,String> image_tags;
 
-    private Map<String, Object> vars;
+//    @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DynamicVarsValFilter.class)
+    private Map<String,Object> vars;
 
-    @JsonIgnore
+//    @JsonIgnore
     private List<AnsibleService> ansible_services;
-    @JsonIgnore
+//    @JsonIgnore
     private List<String> midware_tags;
 
-    public Map<String, String> getImage_tags() {
-        return image_tags;
-    }
-
-    public void setImage_tags(Map<String, String> image_tags) {
-        this.image_tags = image_tags;
-    }
-
-    public Map<String, Object> getVars() {
-        return vars;
-    }
-
-    public void setVars(Map<String, Object> vars) {
-        this.vars = vars;
-    }
 
     public List<AnsibleService> getAnsible_services() {
         return ansible_services;
@@ -59,5 +46,22 @@ public class BaseVars {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+
+    public Map<String, String> getImage_tags() {
+        return image_tags;
+    }
+
+    public void setImage_tags(Map<String, String> image_tags) {
+        this.image_tags = image_tags;
+    }
+
+    public Map<String, Object> getVars() {
+        return vars;
+    }
+
+    public void setVars(Map<String, Object> vars) {
+        this.vars = vars;
     }
 }

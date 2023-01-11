@@ -14,7 +14,6 @@ import cn.iocoder.yudao.module.pdeploy.dal.mysql.moduleprocess.ModuleProcessMapp
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.process.ProcessMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectconf.ProjectConfMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectmodule.ProjectModuleMapper;
-import io.swagger.util.Json;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -38,7 +37,6 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 
 import cn.iocoder.yudao.module.pdeploy.convert.baseline.BaselineConvert;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.baseline.BaselineMapper;
-import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -135,85 +133,64 @@ public class BaselineServiceImpl implements BaselineService {
 
             // 解析基础配置
             parseBaseConf(id, dynamicVars);
-            // 解析初始化信息
-            parseAnsibleTasks(id, dynamicVars);
+            // 解析中间件配置
+            parseMidwaresConfig(id,dynamicVars);
+            // 解析中间件初始化信息
+            parseMidwaresInit(id, dynamicVars);
             // 解析中间件信息
             parseMidWares(id, dynamicVars);
             // 解析模块信息
             parseModels(id, dynamicVars);
             // 更新占位符
-            DumperOptions options = new DumperOptions();
-            options.setIndentWithIndicator(true);
-            options.setIndicatorIndent(2);
-            Yaml yaml = new Yaml(new RepresenterNull2Empty(), options);
-            String dump = yaml.dumpAsMap(dynamicVars);
-            BaselineDO build = BaselineDO.builder().id(id).baselineConfYaml(dump).build();
-            baselineMapper.updateById(build);
+//            DumperOptions options = new DumperOptions();
+//            options.setIndentWithIndicator(true);
+//            options.setIndicatorIndent(2);
+//            Yaml yaml = new Yaml(new RepresenterNull2Empty(), options);
+//            String dump = yaml.dumpAsMap(dynamicVars);
+//            BaselineDO build = BaselineDO.builder().id(id).baselineConfYaml(dump).build();
+//            baselineMapper.updateById(build);
         }
     }
 
 
     private void parseBaseConf(Long id, DynamicVars dynamicVars) {
-        BaseVars basic_info = dynamicVars.getBasic_info();
-        if (null != basic_info) {
-            Map<String, Object> vars = basic_info.getVars();
-            if (MapUtils.isNotEmpty(vars)) {
-                List<ProjectConfDO> projectConfDOS = new ArrayList<>();
-                vars.forEach((confKey, confValue) -> {
-                    if (null == confValue) {
-                        confValue = "";
-                    }
-                    if (confValue instanceof Collection) {
-                        confValue = JsonUtils.toJsonString(confValue);
-                    }
-                    String confValuePlaceholder = "basic_" + confKey;
-                    ProjectConfDO confDO = ProjectConfDO.builder()
-                            .projectId(-1l)
-                            .baselineId(id)
-                            .tag("basic")
-                            .confKey(confKey)
-                            .tagFilter(genTagFilter(confKey))
-                            .confValue(confValue.toString())
-                            .confValuePlaceholder(confValuePlaceholder)
-                            .type(1)
-                            .modifyFlag(true)
-                            .build();
-                    projectConfDOS.add(confDO);
-                    vars.put(confKey, confValuePlaceholder);
-                });
-                projectConfMapper.insertBatch(projectConfDOS);
-            }
+        Map<String, BaseVars> env = dynamicVars.getEnv();
+        if (MapUtils.isNotEmpty(env)) {
+            parse(id, env, 3);
         }
-
     }
 
-    private void parseAnsibleTasks(Long id, DynamicVars dynamicVars) {
-        List<AnsibleTask> elasticsearch_init_tasks = dynamicVars.getElasticsearch_init_tasks();
-        List<AnsibleTask> minio_init_tasks = dynamicVars.getMinio_init_tasks();
-        List<AnsibleTask> mysql_init_tasks = dynamicVars.getMysql_init_tasks();
-        List<AnsibleTask> postgresql_init_tasks = dynamicVars.getPostgresql_init_tasks();
-        List<AnsibleTask> rabbitmq_init_tasks = dynamicVars.getRabbitmq_init_tasks();
-        List<AnsibleTask> rocketmq_init_tasks = dynamicVars.getRocketmq_init_tasks();
-        List<AnsibleTask> post_check_tasks = dynamicVars.getPost_check_tasks();
-
+    private void parseMidwaresInit(Long id, DynamicVars dynamicVars) {
+        Map<String, BaseVars> midwaresInit = dynamicVars.getMidwares_init();
+        if (MapUtils.isNotEmpty(midwaresInit)) {
+            parse(id, midwaresInit, 4);
+        }
     }
-
+    private void parseMidwaresConfig(Long id, DynamicVars dynamicVars) {
+        Map<String, BaseVars> midwaresConfig = dynamicVars.getMidwares_config();
+        if (MapUtils.isNotEmpty(midwaresConfig)) {
+            parse(id, midwaresConfig, 6);
+        }
+    }
     private void parseMidWares(Long id, DynamicVars dynamicVars) {
         Map<String, BaseVars> midwares = dynamicVars.getMidwares();
         if (MapUtils.isNotEmpty(midwares)) {
-            parse(id, dynamicVars.getMidwares(), 2);
+            parse(id, midwares, 2);
         }
     }
 
     private void parseModels(Long id, DynamicVars dynamicVars) {
         Map<String, BaseVars> models = dynamicVars.getModels();
         if (MapUtils.isNotEmpty(models)) {
-            parse(id, dynamicVars.getModels(), 1);
+            parse(id, models, 1);
         }
     }
 
     private void parse(Long id, Map<String, BaseVars> maps, Integer type) {
         maps.forEach((key, value) -> {
+            if (null == value) {
+                return;
+            }
             ModuleDO moduleDO = new ModuleDO();
             moduleDO.setBaselineId(id);
             moduleDO.setTag(key);
@@ -243,6 +220,7 @@ public class BaselineServiceImpl implements BaselineService {
                     processDO.setName(ansibleService.getName());
                     processDO.setProcessType(type);
                     processDO.setTag(key);
+                    processDO.setTagFilter(ansibleService.getTag_filter());
                     processDOS.add(processDO);
                 });
                 processMapper.insertBatch(processDOS);
@@ -255,10 +233,30 @@ public class BaselineServiceImpl implements BaselineService {
                 });
                 moduleProcessMapper.insertBatch(moduleProcessDOS);
             }
+            List<ProjectConfDO> projectConfDOS = new ArrayList<>();
+            // 解析镜像配置
+            if (MapUtils.isNotEmpty(image_tags)) {
+                image_tags.forEach((confKey, confValue) -> {
+                    if (null == confValue) {
+                        confValue = "";
+                    }
+                    ProjectConfDO confDO = ProjectConfDO.builder()
+                            .projectId(-1l)
+                            .baselineId(id)
+                            .tag(key)
+                            .tagFilter(key)
+                            .confKey(confKey)
+                            .confValue(confValue)
+                            .confValuePlaceholder(key + "_" + confKey)
+                            .type(2)
+                            .modifyFlag(true)
+                            .build();
+                    projectConfDOS.add(confDO);
+                });
+            }
             // 解析变量
             Map<String, Object> vars = value.getVars();
             if (MapUtils.isNotEmpty(vars)) {
-                List<ProjectConfDO> projectConfDOS = new ArrayList<>();
                 vars.forEach((confKey, confValue) -> {
                     if (null == confValue) {
                         confValue = "";
@@ -279,6 +277,8 @@ public class BaselineServiceImpl implements BaselineService {
                             .build();
                     projectConfDOS.add(confDO);
                 });
+            }
+            if (CollectionUtils.isNotEmpty(projectConfDOS)) {
                 projectConfMapper.insertBatch(projectConfDOS);
             }
         });

@@ -43,6 +43,8 @@ public class ProcessDO extends BaseDO {
      * 进程标签
      */
     private String tag;
+
+    private String tagFilter;
     /**
      * 进程版本
      */

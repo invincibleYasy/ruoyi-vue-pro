@@ -65,7 +65,8 @@
         </template>
       </el-table-column>
       <el-table-column label="进程名称" align="center" prop="name"/>
-      <el-table-column label="进程版本" align="center" prop="version"/>
+      <el-table-column label="进程标签" align="center" prop="tag"/>
+      <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
       <el-table-column label="进程类型" align="center" prop="processType">
         <template slot-scope="scope">
           <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.pdeploy.controller.admin.process.vo;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.*;
 import java.util.*;
 import io.swagger.annotations.*;
@@ -23,6 +24,9 @@ public class ProcessExportReqVO {
 
     @ApiModelProperty(value = "进程标签")
     private String tag;
+
+    @ApiModelProperty(value = "过滤标签")
+    private String tagFilter;
 
     @ApiModelProperty(value = "进程版本")
     private String version;

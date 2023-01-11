@@ -103,7 +103,7 @@
         </el-form-item>
         <el-form-item label="关联模块" prop="moduleIds">
           <el-select v-model="form.moduleIds" placeholder="请选择关联模块" filterable collapse-tags multiple>
-            <el-option v-for="dict in modules.filter( mod => mod.baselineId == form.baselineId)"
+            <el-option v-for="dict in modules.filter( mod => mod.baselineId === form.baselineId && mod.moduleType === 1)"
                        :key="dict.id" :label="dict.name" :value="parseInt(dict.id)"/>
           </el-select>
         </el-form-item>

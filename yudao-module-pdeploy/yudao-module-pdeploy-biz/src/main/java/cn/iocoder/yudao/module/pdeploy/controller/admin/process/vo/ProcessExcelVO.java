@@ -33,6 +33,9 @@ public class ProcessExcelVO {
     @ExcelProperty("进程标签")
     private String tag;
 
+    @ExcelProperty(value = "过滤标签")
+    private String tagFilter;
+
     @ExcelProperty("进程版本")
     private String version;
 
