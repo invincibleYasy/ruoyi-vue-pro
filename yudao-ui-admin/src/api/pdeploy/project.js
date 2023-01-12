@@ -98,6 +98,13 @@ export function mergeServers(data) {
   })
 }
 
+export function getDeployInfo(id) {
+  return request({
+    url: '/pdeploy/project/get-deploy-info?id=' + id,
+    method: 'get'
+  })
+}
+
 export function syncProjectConf(data) {
   return request({
     url: "pdeploy/project/syncProjectConf",

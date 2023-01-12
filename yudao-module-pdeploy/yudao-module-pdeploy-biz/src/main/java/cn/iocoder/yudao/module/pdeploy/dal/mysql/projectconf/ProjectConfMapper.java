@@ -27,6 +27,7 @@ public interface ProjectConfMapper extends BaseMapperX<ProjectConfDO> {
                 .eqIfPresent(ProjectConfDO::getType, reqVO.getType())
                 .likeIfPresent(ProjectConfDO::getKeyDesc, reqVO.getKeyDesc())
                 .eqIfPresent(ProjectConfDO::getVersion, reqVO.getVersion())
+                .inIfPresent(ProjectConfDO::getType, reqVO.getTypes())
                 .betweenIfPresent(ProjectConfDO::getCreateTime, reqVO.getCreateTime())
                 .orderByDesc(ProjectConfDO::getId));
     }

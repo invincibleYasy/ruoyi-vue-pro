@@ -15,4 +15,5 @@ public class ProjectUpdateReqVO extends ProjectBaseVO {
     @NotNull(message = "ID不能为空")
     private Long id;
     private Set<Long> moduleIds;
+    private Integer type;
 }

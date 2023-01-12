@@ -15,13 +15,16 @@ import cn.iocoder.yudao.module.pdeploy.dal.dataobject.server.ServerDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.serverprocess.ServerProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.baseline.BaselineMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.module.ModuleMapper;
+import cn.iocoder.yudao.module.pdeploy.dal.mysql.process.ProcessMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectconf.ProjectConfMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectmodule.ProjectModuleMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.server.ServerMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.serverprocess.ServerProcessMapper;
 import cn.iocoder.yudao.module.pdeploy.service.projectmodule.ProjectModuleService;
 import cn.iocoder.yudao.module.pdeploy.service.server.ServerService;
+import jdk.nashorn.internal.objects.annotations.Function;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -73,6 +76,8 @@ public class ProjectServiceImpl implements ProjectService {
     private BaselineMapper baselineMapper;
     @Resource
     private ModuleMapper moduleMapper;
+    @Resource
+    private ProcessMapper processMapper;
 
 
     @Override
@@ -86,7 +91,7 @@ public class ProjectServiceImpl implements ProjectService {
         //处理关联模块信息
         projectModuleService.createProjectModule(project.getId(), moduleDOS);
         //生成项目配置信息
-        batchSaveProjectConf(project.getId(),project.getBaselineId());
+//        batchSaveProjectConf(project.getId(),project.getBaselineId());
         return project.getId();
     }
 
@@ -98,7 +103,7 @@ public class ProjectServiceImpl implements ProjectService {
         DynamicVars dynamicVars = yaml.loadAs(baselineDO.getBaselineConfYaml(), DynamicVars.class);
         project.setProjConfJson(JsonUtils.toJsonPrettyString(dynamicVars));
         Set<String> allTags = moduleDOS.stream().map(ModuleDO::getTag).collect(Collectors.toSet());
-        allTags.add("basic");
+        allTags.add("init");
         allTags.add("all");
         Set<String> midwareTags = moduleDOS.stream().map(moduleDO -> {
             if (StringUtils.isNotEmpty(moduleDO.getMidwareTags())) {
@@ -111,19 +116,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     }
 
-    private void batchSaveProjectConf(Long projectId, Long baselineId) {
-        Map<String, Object> projConfQuery = new HashMap<>();
-        projConfQuery.put("project_id", projectId);
-        ProjectConfDO lastBaselineConf = projectConfMapper.selectOne(new QueryWrapperX<ProjectConfDO>()
-                .eq("project_id", -1)
-                .eqIfPresent("baseline_id", baselineId)
-                .orderByDesc("id").limit1());
-        ProjectConfDO lastProjectConf = projectConfMapper.selectOne(new QueryWrapperX<ProjectConfDO>()
-                .eq("project_id", projectId)
-                .orderByDesc("id").limit1());
-        if (null != lastProjectConf && null != lastBaselineConf && lastProjectConf.getId() > lastBaselineConf.getId()) {
-            return;
-        }
+    public void batchSaveProjectConf(Long projectId, Long baselineId, List<Integer> types) {
         ProjectDO projectDO = projectMapper.selectById(projectId);
         if (StringUtils.isEmpty(projectDO.getAllProjTags())) {
             return;
@@ -134,10 +127,22 @@ public class ProjectServiceImpl implements ProjectService {
         List<ProjectConfDO> baselineConfDOS = projectConfMapper.selectList(new LambdaQueryWrapperX<ProjectConfDO>()
                 .eqIfPresent(ProjectConfDO::getProjectId, -1)
                 .eqIfPresent(ProjectConfDO::getBaselineId, baselineId)
+                .inIfPresent(ProjectConfDO::getType, types)
                 .inIfPresent(ProjectConfDO::getTag, allTags)
         );
 
-        projectConfMapper.deleteByMap(projConfQuery);
+        LambdaQueryWrapperX<ProjectConfDO> queryWrapperX = new LambdaQueryWrapperX<ProjectConfDO>()
+                .in(ProjectConfDO::getType, types)
+                .eq(ProjectConfDO::getProjectId, projectId);
+        List<ProjectConfDO> projectConfDOS = projectConfMapper.selectList(queryWrapperX);
+
+        Map<String, String> existConfMap = new HashMap<>();
+        projectConfDOS.forEach(projectConfDO -> {
+            String tag = projectConfDO.getTag();
+            String confKey = projectConfDO.getConfKey();
+            String confValue = projectConfDO.getConfValue();
+            existConfMap.put(tag + ":" + confKey, confValue);
+        });
         if (CollectionUtils.isNotEmpty(baselineConfDOS)) {
             List<ProjectConfDO> collect = baselineConfDOS.stream()
                     .filter(projectConfDO -> {
@@ -159,6 +164,7 @@ public class ProjectServiceImpl implements ProjectService {
                         return false;
                     })
                     .map(baselineConfDO -> {
+                                String confValue = existConfMap.get(baselineConfDO.getTag() + ":" + baselineConfDO.getConfKey());
                                 ProjectConfDO build = ProjectConfDO.builder()
                                         .projectId(projectId)
                                         .baselineId(baselineId)
@@ -167,16 +173,44 @@ public class ProjectServiceImpl implements ProjectService {
                                         .modifyFlag(baselineConfDO.getModifyFlag())
                                         .confKey(baselineConfDO.getConfKey())
                                         .keyDesc(baselineConfDO.getKeyDesc())
-                                        .confValue(baselineConfDO.getConfValue())
+                                        .confValue(confValue == null ? baselineConfDO.getConfValue() : confValue)
                                         .type(baselineConfDO.getType())
                                         .version(baselineConfDO.getVersion())
-                                        .confValue(baselineConfDO.getConfValue())
                                         .build();
                                 return build;
                             }
                     ).collect(Collectors.toList());
+            projectConfMapper.delete(queryWrapperX);
             projectConfMapper.insertBatch(collect);
         }
+    }
+
+    @Override
+    public ProjectProcessRespVo getProjectProcess(Long projectId) {
+        ProjectDO projectDO = projectMapper.selectById(projectId);
+        if (null != projectDO) {
+            List<String> allProjTags = Arrays.asList(projectDO.getAllProjTags().split(","));
+            List<ProcessDO> processDOS = processMapper.selectList(new LambdaQueryWrapperX<ProcessDO>()
+                    .inIfPresent(ProcessDO::getTag, allProjTags)
+                    .eqIfPresent(ProcessDO::getBaselineId, projectDO.getBaselineId()));
+            Map<Integer, List<ProcessDO>> processMap = processDOS.stream().filter(processDO -> {
+                List<String> confTagFilters = Arrays.asList(processDO.getTagFilter().split(","));
+                return allProjTags.containsAll(confTagFilters);
+            }).collect(Collectors.groupingBy(ProcessDO::getProcessType, Collectors.toList()));
+            //3,2,4,1
+            List<ProcessDO> processDOS1 = processMap.get(3);
+            List<ProcessDO> processDOS2 = processMap.get(2);
+            List<ProcessDO> processDOS3 = processMap.get(4);
+            List<ProcessDO> processDOS4 = processMap.get(1);
+            ProjectProcessRespVo build = ProjectProcessRespVo.builder()
+                    .initEnv(ProjectProcessRespVo.ProjectProcess.builder().name("检查&初始化环境").processes(processDOS1).build())
+                    .deployMidware(ProjectProcessRespVo.ProjectProcess.builder().name("部署中间件").processes(processDOS2).build())
+                    .initMidware(ProjectProcessRespVo.ProjectProcess.builder().name("初始化中间件").processes(processDOS3).build())
+                    .deployApp(ProjectProcessRespVo.ProjectProcess.builder().name("部署应用").processes(processDOS4).build())
+                    .build();
+            return build;
+        }
+        return ProjectProcessRespVo.builder().build();
     }
 
     @Override
@@ -191,7 +225,7 @@ public class ProjectServiceImpl implements ProjectService {
         // 更新项目模块关系
         projectModuleService.createProjectModule(updateReqVO.getId(), moduleDOS);
         // 生成项目配置信息
-        batchSaveProjectConf(updateObj.getId(),updateObj.getBaselineId());
+//        batchSaveProjectConf(updateObj.getId(),updateObj.getBaselineId());
     }
 
     @Override
@@ -349,7 +383,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public void syncBaselineConf(ProjectUpdateReqVO updateReqVO) {
-        batchSaveProjectConf(updateReqVO.getId(), updateReqVO.getBaselineId());
+        batchSaveProjectConf(updateReqVO.getId(), updateReqVO.getBaselineId(), Collections.singletonList(updateReqVO.getType()));
     }
 
     @Override

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.pdeploy.service.process;
 
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -83,6 +84,13 @@ public class ProcessServiceImpl implements ProcessService {
     @Override
     public List<ProcessDO> getProcessList(ProcessExportReqVO exportReqVO) {
         return processMapper.selectList(exportReqVO);
+    }
+
+    @Override
+    public List<ProcessDO> getProcessListByTagsAndBaseline(Set<String> tags, Long baselineId) {
+        return processMapper.selectList(new LambdaQueryWrapperX<ProcessDO>()
+                .inIfPresent(ProcessDO::getTag, tags)
+                .eqIfPresent(ProcessDO::getBaselineId, baselineId));
     }
 
 }

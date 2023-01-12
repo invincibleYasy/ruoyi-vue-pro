@@ -2,7 +2,9 @@ package cn.iocoder.yudao.module.pdeploy.service.project;
 
 import java.util.*;
 import javax.validation.*;
+
 import cn.iocoder.yudao.module.pdeploy.controller.admin.project.vo.*;
+import cn.iocoder.yudao.module.pdeploy.dal.dataobject.process.ProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.project.ProjectDO;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 
@@ -51,6 +53,7 @@ public interface ProjectService {
      */
     List<ProjectDO> getProjectList(Collection<Long> ids);
 
+
     /**
      * 获得私有项目分页
      *
@@ -78,4 +81,8 @@ public interface ProjectService {
     void updateProjectServer(ProjectServerUpdateReqVO updateReqVO);
 
     void deleteProjectServer(Long serverId);
+
+    void batchSaveProjectConf(Long projectId, Long baselineId, List<Integer> types);
+
+    ProjectProcessRespVo getProjectProcess(Long projectId);
 }

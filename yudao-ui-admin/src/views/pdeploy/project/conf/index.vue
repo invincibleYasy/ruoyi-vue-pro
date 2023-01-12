@@ -18,14 +18,14 @@
       <el-form-item label="配置键" prop="confKey">
         <el-input v-model="queryParams.confKey" placeholder="请输入键" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
-      <el-form-item label="Modify" prop="modifyFlag" v-if="source === 1">
-        <el-select v-model="queryParams.modifyFlag" placeholder="请选择是否需修改" clearable size="small">
-          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_YES_NO)"
-                     :key="dict.value" :label="dict.label" :value="dict.value"/>
-        </el-select>
-      </el-form-item>
+<!--      <el-form-item label="Modify" prop="modifyFlag" v-if="source === 1">-->
+<!--        <el-select v-model="queryParams.modifyFlag" placeholder="请选择是否需修改" clearable size="small">-->
+<!--          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_YES_NO)"-->
+<!--                     :key="dict.value" :label="dict.label" :value="dict.value"/>-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
       <el-form-item label="配置类型" prop="type">
-        <el-select v-model="queryParams.type" placeholder="请选择配置类型" clearable size="small">
+        <el-select v-model="queryParams.type" placeholder="请选择配置类型" clearable size="small" v-if="source === 1">
           <el-option v-for="dict in this.getDictDatas(DICT_TYPE.ANSIBLE_CONF_TYPE)"
                      :key="dict.value" :label="dict.label" :value="dict.value"/>
         </el-select>
@@ -57,14 +57,14 @@
       <el-table-column label="配置标签" align="center" prop="tag"/>
       <el-table-column label="键" align="center" prop="confKey"/>
       <el-table-column label="值" align="center" prop="confValue"/>
-      <el-table-column label="是否需修改" align="center" prop="modifyFlag">
-        <template slot-scope="scope">
-          <el-switch
-            v-model="scope.row.modifyFlag"
-          />
-          <!--          <dict-tag :type="DICT_TYPE.SYSTEM_YES_NO" :value="scope.row.modifyFlag"/>-->
-        </template>
-      </el-table-column>
+<!--      <el-table-column label="是否需修改" align="center" prop="modifyFlag">-->
+<!--        <template slot-scope="scope">-->
+<!--          <el-switch-->
+<!--            v-model="scope.row.modifyFlag"-->
+<!--          />-->
+<!--          &lt;!&ndash;          <dict-tag :type="DICT_TYPE.SYSTEM_YES_NO" :value="scope.row.modifyFlag"/>&ndash;&gt;-->
+<!--        </template>-->
+<!--      </el-table-column>-->
       <el-table-column label="配置类型" align="center" prop="type">
         <template scope="scope">
           <dict-tag :type="DICT_TYPE.ANSIBLE_CONF_TYPE" :value="scope.row.type"/>
@@ -95,11 +95,11 @@
         <el-form-item label="值" prop="confValue">
           <el-input v-model="form.confValue" placeholder="请输入值"/>
         </el-form-item>
-        <el-form-item label="是否需修改" prop="modifyFlag" v-if="source === 1">
-          <el-switch
-            v-model="form.modifyFlag"
-          />
-        </el-form-item>
+<!--        <el-form-item label="是否需修改" prop="modifyFlag" v-if="source === 1">-->
+<!--          <el-switch-->
+<!--            v-model="form.modifyFlag"-->
+<!--          />-->
+<!--        </el-form-item>-->
         <el-form-item label="配置类型" prop="type" v-if="source === 1 ">
           <el-select v-model="form.type" placeholder="请选择配置类型">
             <el-option v-for="dict in this.getDictDatas(DICT_TYPE.ANSIBLE_CONF_TYPE)"
@@ -156,8 +156,8 @@ export default {
       default: 1,
     },
     superConfType: {
-      type: Number,
-      default: undefined
+      type: String,
+      default: []
     },
     superProjectId: {
       type: Number,
@@ -199,6 +199,7 @@ export default {
         confValue: null,
         modifyFlag: 'true',
         type: null,
+        types: [],
         keyDesc: null,
         version: null,
         baselineId: null,
@@ -210,6 +211,9 @@ export default {
     };
   },
   created() {
+    console.log(this.superConfType)
+    console.log(this.superProjectId)
+    console.log(this.superBaselineId)
     if (this.superProjectId) {
       this.queryParams.projectId = this.superProjectId;
     }
@@ -276,6 +280,7 @@ export default {
       let params = {
         baselineId: this.queryParams.baselineId,
         id: this.queryParams.projectId,
+        type: this.queryParams.type
       }
       syncProjectConf(params).then(res => {
         this.loading = false

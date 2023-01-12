@@ -41,6 +41,9 @@ public class ProjectConfPageReqVO extends PageParam {
     @ApiModelProperty(value = "配置类型")
     private Integer type;
 
+    @ApiModelProperty(value = "配置类型")
+    private List<Integer> types = new ArrayList<>();
+
     @ApiModelProperty(value = "键描述")
     private String keyDesc;
 

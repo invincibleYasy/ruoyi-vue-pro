@@ -14,12 +14,12 @@
       <el-form-item label="值" prop="confValue">
         <el-input v-model="queryParams.confValue" placeholder="请输入值" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
-      <el-form-item label="是否需修改" prop="modifyFlag">
-        <el-select v-model="queryParams.modifyFlag" placeholder="请选择是否需修改" clearable size="small">
-          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.INFRA_BOOLEAN_STRING)"
-                       :key="dict.value" :label="dict.label" :value="dict.value"/>
-        </el-select>
-      </el-form-item>
+<!--      <el-form-item label="是否需修改" prop="modifyFlag">-->
+<!--        <el-select v-model="queryParams.modifyFlag" placeholder="请选择是否需修改" clearable size="small">-->
+<!--          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.INFRA_BOOLEAN_STRING)"-->
+<!--                       :key="dict.value" :label="dict.label" :value="dict.value"/>-->
+<!--        </el-select>-->
+<!--      </el-form-item>-->
       <el-form-item label="配置类型" prop="type">
         <el-select v-model="queryParams.type" placeholder="请选择配置类型" clearable size="small">
           <el-option v-for="dict in this.getDictDatas(DICT_TYPE.ANSIBLE_CONF_TYPE)"
@@ -62,11 +62,11 @@
       <el-table-column label="配置标签" align="center" prop="tag" />
       <el-table-column label="键" align="center" prop="confKey" />
       <el-table-column label="值" align="center" prop="confValue" />
-      <el-table-column label="是否需修改" align="center" prop="modifyFlag">
-        <template slot-scope="scope">
-          <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.modifyFlag" />
-        </template>
-      </el-table-column>
+<!--      <el-table-column label="是否需修改" align="center" prop="modifyFlag">-->
+<!--        <template slot-scope="scope">-->
+<!--          <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.modifyFlag" />-->
+<!--        </template>-->
+<!--      </el-table-column>-->
       <el-table-column label="配置类型" align="center" prop="type">
         <template slot-scope="scope">
           <dict-tag :type="DICT_TYPE.ANSIBLE_CONF_TYPE" :value="scope.row.type" />
@@ -106,12 +106,12 @@
         <el-form-item label="值" prop="confValue">
           <el-input v-model="form.confValue" placeholder="请输入值" />
         </el-form-item>
-        <el-form-item label="是否需修改" prop="modifyFlag">
-          <el-radio-group v-model="form.modifyFlag">
-            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.INFRA_BOOLEAN_STRING)"
-                      :key="dict.value" :label="dict.value">{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
+<!--        <el-form-item label="是否需修改是否需修改是否需修改是否需修改" prop="modifyFlag">-->
+<!--          <el-radio-group v-model="form.modifyFlag">-->
+<!--            <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.INFRA_BOOLEAN_STRING)"-->
+<!--                      :key="dict.value" :label="dict.value">{{dict.label}}</el-radio>-->
+<!--          </el-radio-group>-->
+<!--        </el-form-item>-->
         <el-form-item label="配置类型" prop="type">
           <el-radio-group v-model="form.type">
             <el-radio v-for="dict in this.getDictDatas(DICT_TYPE.ANSIBLE_CONF_TYPE)"

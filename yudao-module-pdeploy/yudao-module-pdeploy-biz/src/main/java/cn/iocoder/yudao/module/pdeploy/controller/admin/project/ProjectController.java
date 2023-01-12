@@ -123,6 +123,7 @@ public class ProjectController {
      * INSERT INTO `ruoyi-vue-pro`.`system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `status`, `visible`, `keep_alive`, `creator`, `create_time`, `updater`, `update_time`, `deleted`) VALUES (1274, '模块管理', '', 2, 40, 1268, 'module', 'example', 'pdeploy/module/index', 0, b'1', b'1', '1', '2022-08-12 12:49:43', '1', '2022-08-12 12:50:04', b'0');
      * INSERT INTO `ruoyi-vue-pro`.`system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `status`, `visible`, `keep_alive`, `creator`, `create_time`, `updater`, `update_time`, `deleted`) VALUES (1275, '服务器管理', '', 2, 50, 1268, 'server', 'server', 'pdeploy/server/index', 0, b'1', b'1', '1', '2022-08-12 12:50:58', '1', '2022-08-12 12:50:58', b'0');
      * INSERT INTO `ruoyi-vue-pro`.`system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `status`, `visible`, `keep_alive`, `creator`, `create_time`, `updater`, `update_time`, `deleted`) VALUES (1276, '进程管理', '', 2, 60, 1268, 'process', 'swagger', 'pdeploy/process/index', 0, b'1', b'1', '1', '2022-08-12 12:51:44', '1', '2022-08-12 12:51:44', b'0');
+     *
      * @param id
      * @return
      */
@@ -179,6 +180,14 @@ public class ProjectController {
         // 导出 Excel
         List<ProjectExcelVO> datas = ProjectConvert.INSTANCE.convertList02(list);
         ExcelUtils.write(response, "私有项目.xls", "数据", ProjectExcelVO.class, datas);
+    }
+
+    @GetMapping("/get-deploy-info")
+    @ApiOperation("获得私有项目部署列表")
+    @ApiImplicitParam(name = "id", value = "编号", required = true, example = "1024", dataTypeClass = Long.class)
+    @PreAuthorize("@ss.hasPermission('pdeploy:project:query')")
+    public CommonResult<ProjectProcessRespVo> getProjectDeployInfo(@RequestParam("id") Long id) {
+        return success(projectService.getProjectProcess(id));
     }
 
 }

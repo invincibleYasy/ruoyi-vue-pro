@@ -3,7 +3,7 @@
     <el-row>
       <el-col :span="22">
         <el-steps :active="activeStep" finish-status="success" align-center>
-          <el-step title="资源规划"></el-step>
+          <el-step title="前期规划"></el-step>
           <el-step title="配置修改"></el-step>
           <el-step title="生成ansible配置文件"></el-step>
           <el-step title="服务部署和验证"></el-step>
@@ -166,33 +166,35 @@
                 </div>
               </el-col>
             </el-tab-pane>
-            <el-tab-pane name="domainPlan" label="域名规划">
-              <div class="domain-plan">
-                <el-table :v-loading="true" v-if="modifyServers[0]" :data="modifyServers[0].processes">
-                  <el-table-column label="基线版本" align="center" prop="baselineId">
-                    <template slot-scope="scope">
-                      <dynamic-dict-tag :options="baselines" :value="scope.row.baselineId"/>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="进程名称" align="center" prop="name"/>
-                  <el-table-column label="进程类型" align="center" prop="processType">
-                    <template slot-scope="scope">
-                      <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="标签" align="center">Mysql</el-table-column>
-                  <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-                    <template slot-scope="scope">
-                      <el-button size="mini" type="text" icon="el-icon-edit" @click="replaceMidware(scope.row)">替换
-                      </el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
-            </el-tab-pane>
-            <el-tab-pane name="midwarePlan" label="中间件配置更改">
-              <config-list :source="2" :super-project-id="project.id"
-                           :super-baseline-id="project.baselineId"/>
+            <!--            <el-tab-pane name="domainPlan" label="域名规划">-->
+            <!--              <div class="domain-plan">-->
+            <!--                <el-table :v-loading="true" v-if="modifyServers[0]" :data="modifyServers[0].processes">-->
+            <!--                  <el-table-column label="基线版本" align="center" prop="baselineId">-->
+            <!--                    <template slot-scope="scope">-->
+            <!--                      <dynamic-dict-tag :options="baselines" :value="scope.row.baselineId"/>-->
+            <!--                    </template>-->
+            <!--                  </el-table-column>-->
+            <!--                  <el-table-column label="进程名称" align="center" prop="name"/>-->
+            <!--                  <el-table-column label="进程类型" align="center" prop="processType">-->
+            <!--                    <template slot-scope="scope">-->
+            <!--                      <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>-->
+            <!--                    </template>-->
+            <!--                  </el-table-column>-->
+            <!--                  <el-table-column label="标签" align="center">Mysql</el-table-column>-->
+            <!--                  <el-table-column label="操作" align="center" class-name="small-padding fixed-width">-->
+            <!--                    <template slot-scope="scope">-->
+            <!--                      <el-button size="mini" type="text" icon="el-icon-edit" @click="replaceMidware(scope.row)">替换-->
+            <!--                      </el-button>-->
+            <!--                    </template>-->
+            <!--                  </el-table-column>-->
+            <!--                </el-table>-->
+            <!--              </div>-->
+            <!--            </el-tab-pane>-->
+            <el-tab-pane name="midwarePlan" label="中间件规划" v-if="project">
+              <config-list key="midwarePlan" :source="3" :super-project-id="project.id"
+                           :super-baseline-id="project.baselineId"
+                           :super-conf-type="'3'"
+              />
             </el-tab-pane>
           </el-tabs>
         </el-row>
@@ -201,12 +203,17 @@
       <div class="step-content" v-if="activeStep === 1">
         <el-row>
           <el-tabs active-name="confUpdate" type="border-card" @tab-click="tabSelect">
-            <el-tab-pane name="confUpdate" label="配置修改">
-              <config-list :source="2" :super-project-id="project.id"
-                           :super-baseline-id="project.baselineId"/>
+            <el-tab-pane name="confUpdate" label="变量配置修改">
+              <config-list key="confUpdate" :source="2" :super-project-id="project.id"
+                           :super-baseline-id="project.baselineId"
+                           :super-conf-type="'1'"
+              />
             </el-tab-pane>
-            <el-tab-pane name="confUpdatePro" label="配置修改(高级)">
-              <Yaml :value="project.projConfYaml" height="800px"/>
+            <el-tab-pane key="confUpdateImage" name="confUpdateImage" label="镜像配置修改及同步">
+              <config-list :source="4" :super-project-id="project.id"
+                           :super-baseline-id="project.baselineId"
+                           :super-conf-type="'2'"
+              />
             </el-tab-pane>
           </el-tabs>
         </el-row>
@@ -231,34 +238,158 @@
         <el-row>
           <el-tabs active-name="serverDeploy" type="border-card" @tab-click="tabSelect">
             <el-tab-pane name="serverDeploy" label="服务部署和验证">
-              <el-descriptions style="padding-top: 20px" border :column="1" v-for="item in preCheckList">
-                <template slot="title">
-                  <el-tag>{{ item.type }}</el-tag>
-                </template>
-                <el-descriptions-item :label="i.name" v-for="i in item.items">
-                  {{ i.content }}
-                </el-descriptions-item>
-              </el-descriptions>
+              <!-- 操作工具栏 -->
+              <!--              <el-row :gutter="10" class="mb8">-->
+              <!--                <el-col :span="1.5">-->
+              <!--                  <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"-->
+              <!--                             v-hasPermi="['pdeploy:process:create']">新增-->
+              <!--                  </el-button>-->
+              <!--                </el-col>-->
+              <!--                <el-col :span="1.5">-->
+              <!--                  <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport"-->
+              <!--                             :loading="exportLoading"-->
+              <!--                             v-hasPermi="['pdeploy:process:export']">导出-->
+              <!--                  </el-button>-->
+              <!--                </el-col>-->
+              <!--                <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>-->
+              <!--              </el-row>-->
+              <!-- 列表 -->
+              <div style="height:800px;overflow:auto;">
+                <el-row>
+                  <el-header>
+                    <el-tag>
+                      {{ projProcessResp.initEnv.name }}
+                    </el-tag>
+                  </el-header>
+                  <el-main>
+                    <el-table v-loading="false" :data="projProcessResp.initEnv.processes">
+                      <el-table-column label="ID" align="center" prop="id"/>
+                      <el-table-column label="基线版本" align="center" prop="baselineId">
+                        <template slot-scope="scope">
+                          <dynamic-dict-tag :options="baselines" :value="scope.row.baselineId"/>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="进程名称" align="center" prop="name"/>
+                      <el-table-column label="进程标签" align="center" prop="tag"/>
+                      <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
+                      <el-table-column label="进程类型" align="center" prop="processType">
+                        <template slot-scope="scope">
+                          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+                        <template slot-scope="scope">
+                          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
+                                     v-hasPermi="['pdeploy:process:update']">部署
+                          </el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </el-main>
+                </el-row>
+                <el-row>
+                  <el-header>
+                    <el-tag>
+                      {{ projProcessResp.deployMidware.name }}
+                    </el-tag>
+                  </el-header>
+                  <el-main>
+                    <el-table v-loading="false" :data="projProcessResp.deployMidware.processes">
+                      <el-table-column label="ID" align="center" prop="id"/>
+                      <el-table-column label="基线版本" align="center" prop="baselineId">
+                        <template slot-scope="scope">
+                          <dynamic-dict-tag :options="baselines" :value="scope.row.baselineId"/>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="进程名称" align="center" prop="name"/>
+                      <el-table-column label="进程标签" align="center" prop="tag"/>
+                      <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
+                      <el-table-column label="进程类型" align="center" prop="processType">
+                        <template slot-scope="scope">
+                          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+                        <template slot-scope="scope">
+                          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
+                                     v-hasPermi="['pdeploy:process:update']">部署
+                          </el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </el-main>
+                </el-row>
+                <el-row>
+                  <el-header>
+                    <el-tag>
+                      {{ projProcessResp.initMidware.name }}
+                    </el-tag>
+                  </el-header>
+                  <el-main>
+                    <el-table v-loading="false" :data="projProcessResp.initMidware.processes">
+                      <el-table-column label="ID" align="center" prop="id"/>
+                      <el-table-column label="基线版本" align="center" prop="baselineId">
+                        <template slot-scope="scope">
+                          <dynamic-dict-tag :options="baselines" :value="scope.row.baselineId"/>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="进程名称" align="center" prop="name"/>
+                      <el-table-column label="进程标签" align="center" prop="tag"/>
+                      <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
+                      <el-table-column label="进程类型" align="center" prop="processType">
+                        <template slot-scope="scope">
+                          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+                        <template slot-scope="scope">
+                          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
+                                     v-hasPermi="['pdeploy:process:update']">部署
+                          </el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </el-main>
+                </el-row>
+                <el-row>
+                  <el-header>
+                    <el-tag>
+                      {{ projProcessResp.deployApp.name }}
+                    </el-tag>
+                  </el-header>
+                  <el-main>
+                    <el-table v-loading="false" :data="projProcessResp.deployApp.processes">
+                      <el-table-column label="ID" align="center" prop="id"/>
+                      <el-table-column label="基线版本" align="center" prop="baselineId">
+                        <template slot-scope="scope">
+                          <dynamic-dict-tag :options="baselines" :value="scope.row.baselineId"/>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="进程名称" align="center" prop="name"/>
+                      <el-table-column label="进程标签" align="center" prop="tag"/>
+                      <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
+                      <el-table-column label="进程类型" align="center" prop="processType">
+                        <template slot-scope="scope">
+                          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+                        <template slot-scope="scope">
+                          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
+                                     v-hasPermi="['pdeploy:process:update']">部署
+                          </el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                  </el-main>
+                </el-row>
+              </div>
+
             </el-tab-pane>
           </el-tabs>
         </el-row>
       </div>
-      <!--中间件版本替换-->
-      <el-dialog title="中间件版本替换" :visible.sync="showReplaceMidware" width="500px" append-to-body>
-        <el-form>
-          <el-form-item label="中间件">
-            <el-select v-model="form" placeholder="中间件" clearable filterable multiple
-                       collapse-tags size="small">
-              <el-option
-                :key="1" label="shared-mysql8" :value="1"/>
-            </el-select>
-          </el-form-item>
-        </el-form>
-        <div slot="footer" class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
-        </div>
-      </el-dialog>
+
       <!--进程详情-->
       <el-dialog title="进程详情" :visible.sync="showProcessDetail"
                  width="500px" append-to-body>
@@ -317,7 +448,7 @@ import {
   mergeServers,
   showProjectConf,
   updateProjectServer,
-  deleteProjectServer
+  deleteProjectServer, getDeployInfo
 } from "@/api/pdeploy/project";
 import draggable from "vuedraggable";
 import {getAllBaselines} from "../../../../api/pdeploy/baseline";
@@ -336,6 +467,7 @@ export default {
   },
   data() {
     return {
+      projProcessResp: {},
       mainConf: '',
       ccpassConf: '',
       preCheckList: [
@@ -393,7 +525,7 @@ export default {
       activeStep: 0,
       activeTab: "serverPlan",
       tagIcon: 'slider',
-      project: {},
+      project: undefined,
       mergeServers: [],
       allProjects: [],
       baselines: [],
@@ -467,6 +599,10 @@ export default {
     });
     getAllProjects().then(res => {
       this.allProjects = res.data.list.filter(i => !isEqual(i.id, projectId * 1));
+    })
+    getDeployInfo(projectId).then(res => {
+      console.log(res)
+      this.projProcessResp = res.data;
     })
   },
   methods: {

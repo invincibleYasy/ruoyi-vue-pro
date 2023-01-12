@@ -132,9 +132,9 @@ public class BaselineServiceImpl implements BaselineService {
             projectConfMapper.deleteByMap(confDelParams);
 
             // 解析基础配置
-            parseBaseConf(id, dynamicVars);
+            parseEnv(id, dynamicVars);
             // 解析中间件配置
-            parseMidwaresConfig(id, dynamicVars);
+            parseMidwaresPlan(id, dynamicVars);
             // 解析中间件初始化信息
             parseMidwaresInit(id, dynamicVars);
             // 解析中间件信息
@@ -153,7 +153,7 @@ public class BaselineServiceImpl implements BaselineService {
     }
 
 
-    private void parseBaseConf(Long id, DynamicVars dynamicVars) {
+    private void parseEnv(Long id, DynamicVars dynamicVars) {
         Map<String, BaseVars> env = dynamicVars.getEnv();
         if (MapUtils.isNotEmpty(env)) {
             parse(id, env, 3);
@@ -167,10 +167,10 @@ public class BaselineServiceImpl implements BaselineService {
         }
     }
 
-    private void parseMidwaresConfig(Long id, DynamicVars dynamicVars) {
-        Map<String, BaseVars> midwaresConfig = dynamicVars.getMidwares_custom();
+    private void parseMidwaresPlan(Long id, DynamicVars dynamicVars) {
+        Map<String, BaseVars> midwaresConfig = dynamicVars.getMidwares_plan();
         if (MapUtils.isNotEmpty(midwaresConfig)) {
-            parse(id, midwaresConfig, 6);
+            parse(id, midwaresConfig, 5);
         }
     }
 
@@ -250,7 +250,7 @@ public class BaselineServiceImpl implements BaselineService {
                             .confKey(confKey)
                             .confValue(confValue)
                             .confValuePlaceholder(key + "_" + confKey)
-                            .type(6 == type ? 3 : 2)
+                            .type(2)
                             .modifyFlag(true)
                             .build();
                     projectConfDOS.add(confDO);
@@ -274,7 +274,7 @@ public class BaselineServiceImpl implements BaselineService {
                             .confKey(confKey)
                             .confValue(confValue.toString())
                             .confValuePlaceholder(key + "_" + confKey)
-                            .type(1)
+                            .type(5 == type ? 3 : 1)
                             .modifyFlag(true)
                             .build();
                     projectConfDOS.add(confDO);

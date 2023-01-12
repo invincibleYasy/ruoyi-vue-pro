@@ -67,4 +67,7 @@ public interface ProcessService {
      */
     List<ProcessDO> getProcessList(ProcessExportReqVO exportReqVO);
 
+
+    List<ProcessDO> getProcessListByTagsAndBaseline(Set<String> tags,Long baselineId);
+
 }
