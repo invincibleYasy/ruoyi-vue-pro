@@ -9,18 +9,22 @@ import java.util.List;
 import java.util.Map;
 
 public class BaseVars {
-//    @JsonIgnore
+    //    @JsonIgnore
     private String name;
 
-//    @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DynamicVarsValFilter.class)
-    private Map<String,String> image_tags;
+    private List<String> sub_domains;
 
-//    @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DynamicVarsValFilter.class)
-    private Map<String,Object> vars;
+    private String check_sub_domain;
 
-//    @JsonIgnore
+    //    @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DynamicVarsValFilter.class)
+    private Map<String, String> image_tags;
+
+    //    @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DynamicVarsValFilter.class)
+    private Map<String, Object> vars;
+
+    //    @JsonIgnore
     private List<AnsibleService> ansible_services;
-//    @JsonIgnore
+    //    @JsonIgnore
     private List<String> midware_tags;
 
 
@@ -63,5 +67,21 @@ public class BaseVars {
 
     public void setVars(Map<String, Object> vars) {
         this.vars = vars;
+    }
+
+    public List<String> getSub_domains() {
+        return sub_domains;
+    }
+
+    public void setSub_domains(List<String> sub_domains) {
+        this.sub_domains = sub_domains;
+    }
+
+    public String getCheck_sub_domain() {
+        return check_sub_domain;
+    }
+
+    public void setCheck_sub_domain(String check_sub_domain) {
+        this.check_sub_domain = check_sub_domain;
     }
 }
