@@ -39,6 +39,12 @@ public class ServerExcelVO {
     @ExcelProperty("内存(GB)")
     private Integer memory;
 
+    @ExcelProperty(value = "所属环境")
+    private Integer envType;
+
+    @ExcelProperty(value = "标签")
+    private String tag;
+
     @ExcelProperty("创建时间")
     private Date createTime;
 

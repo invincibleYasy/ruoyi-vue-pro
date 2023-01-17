@@ -76,11 +76,11 @@ public class ProjectController {
     }
 
 
-    @PostMapping("/extend")
+    @PostMapping("/genServers")
     @ApiOperation("项目继承")
-    public CommonResult<ProjectExtendRespVO> extendProject(@Valid @RequestBody ProjectExtendReqVO extendReqVO) {
-        ProjectExtendRespVO projectExtendRespVO = projectService.extendProject(extendReqVO);
-        return success(projectExtendRespVO);
+    public CommonResult<Boolean> genServers(@Valid @RequestBody GenServersReqVO genServersReqVO) {
+        projectService.genServers(genServersReqVO);
+        return success(true);
     }
 
     @PostMapping("/mergeServer")

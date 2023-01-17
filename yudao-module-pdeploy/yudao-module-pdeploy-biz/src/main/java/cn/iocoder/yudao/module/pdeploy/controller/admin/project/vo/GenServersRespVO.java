@@ -10,9 +10,9 @@ import lombok.ToString;
 import java.util.List;
 
 
-@ApiModel("管理后台 - 私有继承 Response VO")
+@ApiModel("管理后台 - 生成服务器 Response VO")
 @Data
 @ToString(callSuper = true)
-public class ProjectExtendRespVO {
+public class GenServersRespVO {
     private List<ServerRespVO> servers;
 }

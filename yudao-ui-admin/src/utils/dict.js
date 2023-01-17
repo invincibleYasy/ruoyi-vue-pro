@@ -10,6 +10,7 @@ export const DICT_TYPE = {
   COMMON_STATUS: 'common_status',
 
   // ========== DEPLOY 模块 ==========
+  ENV_TYPE: 'env_type',
   MODULE_TYPE: 'module_type',
   PROCESS_TYPE: 'process_type',
   ANSIBLE_CONF_TYPE: 'ansible_conf_type',

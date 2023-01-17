@@ -3,13 +3,13 @@
 
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="基线版本" prop="baselineId">
+      <el-form-item label="基线版本" prop="baselineId" v-if="source === 1">
         <el-select v-model="queryParams.baselineId" placeholder="请选择基线版本" clearable size="small">
           <el-option v-for="dict in baselines"
                      :key="dict.id" :label="dict.name" :value="dict.id"/>
         </el-select>
       </el-form-item>
-      <el-form-item label="所属项目" prop="projectId">
+      <el-form-item label="所属项目" prop="projectId" v-if="source === 1">
         <el-select v-model="queryParams.projectId" placeholder="请选择所属项目" clearable size="small">
           <el-option v-for="dict in projects"
                      :key="dict.id" :label="dict.name" :value="dict.id"/>
@@ -18,13 +18,20 @@
       <el-form-item label="名称" prop="name">
         <el-input v-model="queryParams.name" placeholder="请输入服务器名称" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
-<!--      <el-form-item label="创建时间">-->
-<!--        <el-date-picker v-model="dateRangeCreateTime" style="width: 240px" value-format="yyyy-MM-dd"-->
-<!--                        type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期"/>-->
-<!--      </el-form-item>-->
+      <el-form-item label="环境类型" prop="moduleIds" size="small">
+        <el-select v-model="queryParams.envType" placeholder="请选择环境类型" clearable filterable
+                   size="small">
+          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.ENV_TYPE)"
+                     :key="dict.value" :label="dict.label" :value="parseInt(dict.value)"/>
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
+        <el-button type="primary" style="left: 5px" size="small" icon="el-icon-arrow-down"
+                   @click="genServers">
+          生成服务器
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -32,7 +39,7 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleAdd"
-                   v-hasPermi="['pdeploy:server:create']">新增
+                   v-hasPermi="['pdeploy:server:create']" v-if="source === 1">新增
         </el-button>
       </el-col>
       <el-col :span="1.5">
@@ -46,6 +53,10 @@
 
     <!-- 列表 -->
     <el-table v-loading="loading" :data="list">
+      <el-table-column
+        type="selection"
+        width="55">
+      </el-table-column>
       <el-table-column label="ID" align="center" prop="id"/>
       <el-table-column label="基线版本" align="center" prop="baselineId">
         <template slot-scope="scope">
@@ -57,7 +68,13 @@
           <dynamic-dict-tag :options="projects" :value="scope.row.projectId"/>
         </template>
       </el-table-column>
-      <el-table-column label="服务器名称" align="center" prop="name"/>
+      <el-table-column label="服务器名称" align="center" prop="name">
+        <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
+                     v-hasPermi="['pdeploy:server:update']">{{ scope.row.name }}
+          </el-button>
+        </template>
+      </el-table-column>
       <el-table-column label="服务器IP" align="center" prop="ip"/>
       <el-table-column label="CPU" align="center" prop="cpu"/>
       <el-table-column label="内存(GB)" align="center" prop="memory"/>
@@ -138,10 +155,29 @@ import {
 } from "@/api/pdeploy/server";
 import {getAllBaselines} from "../../../api/pdeploy/baseline";
 import {getAllProcesses} from "../../../api/pdeploy/process";
-import {getAllProjects} from "../../../api/pdeploy/project";
+import {genServers, getAllProjects} from "../../../api/pdeploy/project";
+
 
 export default {
   name: "Server",
+  props: {
+    source: {
+      type: Number,
+      default: 1,
+    },
+    superProjectId: {
+      type: Number,
+      default: undefined,
+    },
+    superBaselineId: {
+      type: Number,
+      default: undefined,
+    },
+    superEnvType: {
+      type: Number,
+      default: 1,
+    }
+  },
   components: {},
   data() {
     return {
@@ -170,6 +206,7 @@ export default {
         baselineId: null,
         projectId: null,
         name: null,
+        envType: null,
         ip: null,
         cpu: null,
         memory: null,
@@ -182,6 +219,16 @@ export default {
     };
   },
   created() {
+    if (this.superProjectId) {
+      this.queryParams.projectId = this.superProjectId;
+    }
+    if (this.superBaselineId) {
+      this.queryParams.baselineId = this.superBaselineId;
+    }
+
+    if (this.superEnvType) {
+      this.queryParams.envType = this.superEnvType;
+    }
     getAllBaselines().then(res => {
       this.baselines = res.data.list;
       getAllProjects().then(res => {
@@ -191,6 +238,20 @@ export default {
     });
   },
   methods: {
+    genServers() {
+      let data = {
+        projectId: this.queryParams.projectId,
+      }
+      genServers(data).then(res => {
+        if (res) {
+          this.$message({
+            type: 'success',
+            message: '操作成功!'
+          });
+          this.getList();
+        }
+      });
+    },
     listAllProcess() {
       getAllProcesses().then(res => {
         this.processes = res.data.list;

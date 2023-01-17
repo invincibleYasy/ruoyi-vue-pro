@@ -26,175 +26,20 @@
         <el-row>
           <el-tabs :v-model="activeTab" active-name="serverPlan" type="border-card" @tab-click="tabSelect">
             <el-tab-pane name="serverPlan" label="服务器规划">
-              <el-col :span="8">
-                <div class="left-module1-board">
-                  <div class="action-bar1">
-                    <!-- 搜索工作栏 -->
-                    <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch">
-                      <!--          <el-form-item>-->
-                      <!--            <el-tag effect="dark" v-if="project">{{ project.name }}:</el-tag>-->
-                      <!--          </el-form-item>-->
-                      <el-form-item :label="project.name" prop="moduleIds" size="small" v-if="project">
-                        <el-select v-model="queryParams.extendProjectId" placeholder="请选择继承项目" clearable filterable
-                                   size="small">
-                          <el-option v-for="dict in allProjects"
-                                     :key="dict.id" :label="dict.name" :value="dict.id"/>
-                        </el-select>
-                      </el-form-item>
-                      <el-form-item>
-                        <el-button type="primary" style="left: 5px" size="small" icon="el-icon-arrow-down"
-                                   @click="handleExtend">
-                          继承
-                        </el-button>
-                      </el-form-item>
-                    </el-form>
-                  </div>
-                  <el-scrollbar class="left-module-scrollbar">
-                    <div class="components-list">
-                      <div v-for="(module, listIndex) in modifyModules" :key="listIndex">
-                        <div class="components-title1">
-                          <div>
-                            <svg-icon icon-class="redis"/>
-                            <el-tag type="warn" size="small">{{ module.name }}</el-tag>
-                          </div>
-                        </div>
-                        <el-scrollbar class="module-scrollbar">
-                          <draggable
-                            class="components-draggable1"
-                            :list="module.processes"
-                            :group="{ name: 'process', pull: 'clone', put: false }"
-                            :clone="cloneProcess"
-                            :sort="false"
-                          >
-                            <el-collapse class="list-module-item"
-                                         v-for="process in module.processes" :key="process.id">
-                              <el-collapse-item :name="module.id+'-'+process.id">
-                                <template slot="title">
-                                  <span>{{ process.name }}</span>
-                                </template>
-                                <el-button type="text" @click="processClick(process)">
-                                  详情
-                                </el-button>
-                              </el-collapse-item>
-                            </el-collapse>
-                          </draggable>
-                        </el-scrollbar>
-                      </div>
-                    </div>
-                  </el-scrollbar>
-                </div>
-              </el-col>
-              <el-col :span="16">
-                <div class="right-server-board">
-                  <div class="right-server-board-content">
-                    <div class="action-bar1" style="border-right: none">
-                      <!-- 搜索工作栏 -->
-                      <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch"
-                               label-width="68px">
-                        <el-form-item label="模块" prop="moduleIds">
-                          <el-select v-model="queryParams.moduleIds" placeholder="请选择模块" clearable filterable multiple
-                                     collapse-tags
-                                     size="small">
-                            <el-option v-for="dict in fixedModules"
-                                       :key="dict.id" :label="dict.name" :value="dict.id"/>
-                          </el-select>
-                        </el-form-item>
-                        <el-form-item label="服务器" prop="serverIds">
-                          <el-select v-model="queryParams.serverIds" placeholder="请选择服务器" clearable filterable
-                                     multiple
-                                     collapse-tags size="small">
-                            <el-option v-for="dict in fixedServers"
-                                       :key="dict.id" :label="dict.name" :value="dict.id"/>
-                          </el-select>
-                        </el-form-item>
-                        <el-form-item>
-                          <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
-                          <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
-                          <el-button type="primary" plain icon="el-icon-plus" size="mini" @click="handleMerge">合并
-                          </el-button>
-                        </el-form-item>
-                      </el-form>
-                    </div>
-                    <el-scrollbar class="center-scrollbar1">
-                      <el-row class="center-board-row" :gutter="20">
-                        <el-form>
-                          <el-col :span="8" v-for="server in modifyServers" :key="server.id">
-                            <div class="components-title1">
-                              <el-button size="small" type="text" icon="el-icon-success"
-                                         @click="updateServer(server)">更新
-                              </el-button>
-                              <el-button size="small" type="text" icon="el-icon-delete" @click="deleteServer(server)">
-                                删除
-                              </el-button>
-                              <el-button size="small" type="text" icon="el-icon-refresh" @click="resetServer(server)">
-                                重置
-                              </el-button>
-                              <el-button size="small" type="text" icon="el-icon-delete"
-                                         @click="deleteAllInServer(server)">清空
-                              </el-button>
-                            </div>
-                            <div style="display: flex; justify-content: space-between">
-                              <div>
-                                <svg-icon icon-class="server"/>
-                                <el-tag type="warn" size="small">{{ server.name }}</el-tag>
-                              </div>
-                              <el-checkbox :id="'serverCheckbox-'+server.id" @change="serverChecked($event,server)"
-                                           :ref="'serverCheckbox-'+server.id"/>
-                            </div>
-                            <el-scrollbar class="server-scrollbar">
-                              <draggable :list="server.processes" :animation="340" group="process">
-                                <el-collapse class="list-server-item left"
-                                             v-for="(process,index) in server.processes" :key="process.id">
-                                  <el-collapse-item :name="server.id+'-'+process.id">
-                                    <template slot="title">
-                                      <i class="el-icon-circle-close" style="margin-right: 5px"
-                                         @click.stop="deleteServerProcess(index,server.processes)"></i>
-                                      <span>{{ process.name }}</span>
-                                    </template>
-                                    <el-button type="text" @click="processClick(process)">
-                                      详情
-                                    </el-button>
-                                  </el-collapse-item>
-                                </el-collapse>
-                              </draggable>
-                            </el-scrollbar>
-                          </el-col>
-                        </el-form>
-                      </el-row>
-                    </el-scrollbar>
-                  </div>
-                </div>
-              </el-col>
+              <div >
+                <server-list :source="2" :super-baseline-id="project.baselineId"
+                             :super-project-id="project.id"
+                             :super-env-type="1" v-if="project"/>
+              </div>
+
             </el-tab-pane>
-            <!--            <el-tab-pane name="domainPlan" label="域名规划">-->
-            <!--              <div class="domain-plan">-->
-            <!--                <el-table :v-loading="true" v-if="modifyServers[0]" :data="modifyServers[0].processes">-->
-            <!--                  <el-table-column label="基线版本" align="center" prop="baselineId">-->
-            <!--                    <template slot-scope="scope">-->
-            <!--                      <dynamic-dict-tag :options="baselines" :value="scope.row.baselineId"/>-->
-            <!--                    </template>-->
-            <!--                  </el-table-column>-->
-            <!--                  <el-table-column label="进程名称" align="center" prop="name"/>-->
-            <!--                  <el-table-column label="进程类型" align="center" prop="processType">-->
-            <!--                    <template slot-scope="scope">-->
-            <!--                      <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>-->
-            <!--                    </template>-->
-            <!--                  </el-table-column>-->
-            <!--                  <el-table-column label="标签" align="center">Mysql</el-table-column>-->
-            <!--                  <el-table-column label="操作" align="center" class-name="small-padding fixed-width">-->
-            <!--                    <template slot-scope="scope">-->
-            <!--                      <el-button size="mini" type="text" icon="el-icon-edit" @click="replaceMidware(scope.row)">替换-->
-            <!--                      </el-button>-->
-            <!--                    </template>-->
-            <!--                  </el-table-column>-->
-            <!--                </el-table>-->
-            <!--              </div>-->
-            <!--            </el-tab-pane>-->
             <el-tab-pane name="midwarePlan" label="中间件规划" v-if="project">
-              <config-list key="midwarePlan" :source="3" :super-project-id="project.id"
-                           :super-baseline-id="project.baselineId"
-                           :super-conf-type="'3'"
-              />
+              <div >
+                <config-list key="midwarePlan" :source="3" :super-project-id="project.id"
+                             :super-baseline-id="project.baselineId"
+                             :super-conf-type="['20']" />
+              </div>
+
             </el-tab-pane>
           </el-tabs>
         </el-row>
@@ -204,16 +49,22 @@
         <el-row>
           <el-tabs active-name="confUpdate" type="border-card" @tab-click="tabSelect">
             <el-tab-pane name="confUpdate" label="变量配置修改">
-              <config-list key="confUpdate" :source="2" :super-project-id="project.id"
-                           :super-baseline-id="project.baselineId"
-                           :super-conf-type="'1'"
-              />
+              <div >
+                <config-list key="confUpdate" :source="2" :super-project-id="project.id"
+                             :super-baseline-id="project.baselineId"
+                             :super-conf-type="['10','90','50','60','70','80']" />
+              </div>
+
+
             </el-tab-pane>
             <el-tab-pane key="confUpdateImage" name="confUpdateImage" label="镜像配置修改及同步">
-              <config-list :source="4" :super-project-id="project.id"
-                           :super-baseline-id="project.baselineId"
-                           :super-conf-type="'2'"
-              />
+              <div >
+                <config-list :source="4" :super-project-id="project.id"
+                             :super-baseline-id="project.baselineId"
+                             :super-conf-type="['30','40']"
+                />
+              </div>
+
             </el-tab-pane>
           </el-tabs>
         </el-row>
@@ -221,14 +72,15 @@
       <!--第三步-->
       <div class="step-content" v-if="activeStep === 2">
         <el-row :gutter="0">
-          <el-tabs active-name="ansibleConf" type="border-card" @tab-click="tabSelect">
-            <el-tab-pane name="ansibleConf" label="ansible配置">
-              <Yaml :value="project.projConfYaml" height="800px" read-only/>
+          <el-tabs active-name="ansibleConfYaml" type="border-card" @tab-click="tabSelect">
+            <el-tab-pane name="ansibleConfYaml" label="ansible配置(yaml)">
+              <Yaml :value="projConfYaml" height="500px" read-only/>
+            </el-tab-pane>
+            <el-tab-pane name="ansibleConfJson" label="ansible配置(json)">
+              <Yaml :value="projConfJson" height="400px" read-only :mode="'application/json'"/>
             </el-tab-pane>
             <el-tab-pane name="ansibleHosts" label="ansibleHosts">
-              <div style="border: 1px solid #f1e8e8;">
-
-              </div>
+              <Yaml :value="ansibleHosts" height="400px" read-only/>
             </el-tab-pane>
           </el-tabs>
         </el-row>
@@ -274,7 +126,7 @@
                       <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
                       <el-table-column label="进程类型" align="center" prop="processType">
                         <template slot-scope="scope">
-                          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+                          <dict-tag :type="DICT_TYPE.MODULE_TYPE" :value="scope.row.processType"/>
                         </template>
                       </el-table-column>
                       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -306,7 +158,7 @@
                       <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
                       <el-table-column label="进程类型" align="center" prop="processType">
                         <template slot-scope="scope">
-                          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+                          <dict-tag :type="DICT_TYPE.MODULE_TYPE" :value="scope.row.processType"/>
                         </template>
                       </el-table-column>
                       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -338,7 +190,7 @@
                       <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
                       <el-table-column label="进程类型" align="center" prop="processType">
                         <template slot-scope="scope">
-                          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+                          <dict-tag :type="DICT_TYPE.MODULE_TYPE" :value="scope.row.processType"/>
                         </template>
                       </el-table-column>
                       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -370,7 +222,7 @@
                       <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
                       <el-table-column label="进程类型" align="center" prop="processType">
                         <template slot-scope="scope">
-                          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+                          <dict-tag :type="DICT_TYPE.MODULE_TYPE" :value="scope.row.processType"/>
                         </template>
                       </el-table-column>
                       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -456,6 +308,7 @@ import {getProjectAll} from "../../../../api/pdeploy/project";
 import {isEqual} from "element-ui/src/utils/util";
 import {deepClone} from "@/utils";
 import configList from "../conf/index";
+import serverList from "../../server/index";
 import Yaml from '@/components/YamlEdit/index';
 
 export default {
@@ -464,12 +317,14 @@ export default {
     draggable,
     configList,
     Yaml,
+    serverList
   },
   data() {
     return {
       projProcessResp: {},
-      mainConf: '',
-      ccpassConf: '',
+      projConfYaml: '',
+      projConfJson: '',
+      ansibleHosts: '',
       preCheckList: [
         {
           type: '环境检测',
@@ -556,6 +411,7 @@ export default {
         pageNo: 1,
         pageSize: 10,
         baselineId: null,
+        envType: 1,
         serverIds: [],
         moduleIds: [],
         name: null,
@@ -596,12 +452,12 @@ export default {
       this.fixedServers = res.data.servers;
       this.modifyModules = deepClone(this.fixedModules)
       this.modifyServers = deepClone(this.fixedServers)
+      this.handleQuery()
     });
     getAllProjects().then(res => {
       this.allProjects = res.data.list.filter(i => !isEqual(i.id, projectId * 1));
     })
     getDeployInfo(projectId).then(res => {
-      console.log(res)
       this.projProcessResp = res.data;
     })
   },
@@ -642,8 +498,9 @@ export default {
         id: this.project.id,
       }
       showProjectConf(params).then(res => {
-        this.mainConf = res.data.mainConf;
-        this.ccpassConf = res.data.ccpassConf;
+        this.projConfYaml = res.data.projConfYaml;
+        this.projConfJson = res.data.projConfJson;
+        this.ansibleHosts = res.data.ansibleHosts;
         console.log("showProjectConf:", res.data);
       });
     },
@@ -656,39 +513,23 @@ export default {
       this.processDetail = process;
     },
     handleExtend() {
-      let params = {...this.queryParams};
-      if (params.extendProjectId) {
-        let currentProj = this.allProjects.find(pro => isEqual(pro.id, params.extendProjectId));
-        console.log("currentProj:", currentProj);
-        this.$confirm('是否要继承【' + currentProj.name + '】, 该操作将重新生成服务器列表，且无法恢复！', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          let data = {
-            extendProjectId: params.extendProjectId,
-            currentProjectId: this.project.id,
-          }
-          console.log("handleExtend:", data);
-          extendProject(data).then(res => {
-            if (res) {
-              this.$message({
-                type: 'success',
-                message: '操作成功!'
-              });
-              this.fixedServers = res.data.servers;
-              this.modifyServers = deepClone(this.fixedServers);
-            }
-            // let params = {...this.queryParams};
-            // console.log("handleExtend:", params);
-          });
-        })
-      } else {
-        this.$message({
-          type: 'warning',
-          message: '请选择需要继承的项目!'
-        });
+      let data = {
+        extendProjectId: params.extendProjectId,
+        currentProjectId: this.project.id,
       }
+      console.log("handleExtend:", data);
+      extendProject(data).then(res => {
+        if (res) {
+          this.$message({
+            type: 'success',
+            message: '操作成功!'
+          });
+          this.fixedServers = res.data.servers;
+          this.modifyServers = deepClone(this.fixedServers);
+        }
+        // let params = {...this.queryParams};
+        // console.log("handleExtend:", params);
+      });
     },
     serverChecked(checked, server) {
       if (checked) {
@@ -778,9 +619,9 @@ export default {
         this.modifyModules = deepClone(this.fixedModules);
       }
       if (params.serverIds.length > 0) {
-        this.modifyServers = deepClone(this.fixedServers.filter(fixedServer => params.serverIds.includes(fixedServer.id)));
+        this.modifyServers = deepClone(this.fixedServers.filter(fixedServer => params.serverIds.includes(fixedServer.id) && fixedServer.envType === params.envType));
       } else {
-        this.modifyServers = deepClone(this.fixedServers);
+        this.modifyServers = deepClone(this.fixedServers.filter(fixedServer => fixedServer.envType === params.envType));
       }
     },
     /** 取消按钮 */

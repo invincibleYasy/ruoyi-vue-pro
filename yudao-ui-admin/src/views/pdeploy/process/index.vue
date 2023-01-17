@@ -15,7 +15,7 @@
 
       <el-form-item label="进程类型" prop="processType">
         <el-select v-model="queryParams.processType" placeholder="请选择进程类型" clearable size="small">
-          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.PROCESS_TYPE)"
+          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.MODULE_TYPE)"
                      :key="dict.value" :label="dict.label" :value="dict.value"/>
         </el-select>
       </el-form-item>
@@ -69,7 +69,7 @@
       <el-table-column label="标签过滤" align="center" prop="tagFilter"/>
       <el-table-column label="进程类型" align="center" prop="processType">
         <template slot-scope="scope">
-          <dict-tag :type="DICT_TYPE.PROCESS_TYPE" :value="scope.row.processType"/>
+          <dict-tag :type="DICT_TYPE.MODULE_TYPE" :value="scope.row.processType"/>
         </template>
       </el-table-column>
       <el-table-column label="CPU" align="center" prop="cpu"/>
@@ -117,7 +117,7 @@
         </el-form-item>
         <el-form-item label="进程类型" prop="processType">
           <el-select v-model="form.processType" placeholder="请选择进程类型" @change="processTypeChange">
-            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.PROCESS_TYPE)"
+            <el-option v-for="dict in this.getDictDatas(DICT_TYPE.MODULE_TYPE)"
                        :key="dict.value" :label="dict.label" :value="parseInt(dict.value)"/>
           </el-select>
         </el-form-item>

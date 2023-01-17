@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DynamicVars {
-
     private List<DnsCheck> dns_check;
 
     private Map<String, BaseVars> midwares_init;

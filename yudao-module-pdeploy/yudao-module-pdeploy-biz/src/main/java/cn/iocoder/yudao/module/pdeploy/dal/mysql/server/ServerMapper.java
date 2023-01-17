@@ -25,6 +25,7 @@ public interface ServerMapper extends BaseMapperX<ServerDO> {
                 .eqIfPresent(ServerDO::getIp, reqVO.getIp())
                 .eqIfPresent(ServerDO::getCpu, reqVO.getCpu())
                 .eqIfPresent(ServerDO::getMemory, reqVO.getMemory())
+                .eqIfPresent(ServerDO::getEnvType, reqVO.getEnvType())
                 .betweenIfPresent(ServerDO::getCreateTime, reqVO.getBeginCreateTime(), reqVO.getEndCreateTime())
                 .eqIfPresent(ServerDO::getRemark, reqVO.getRemark())
                 .orderByDesc(ServerDO::getId));
@@ -38,6 +39,7 @@ public interface ServerMapper extends BaseMapperX<ServerDO> {
                 .eqIfPresent(ServerDO::getIp, reqVO.getIp())
                 .eqIfPresent(ServerDO::getCpu, reqVO.getCpu())
                 .eqIfPresent(ServerDO::getMemory, reqVO.getMemory())
+                .eqIfPresent(ServerDO::getEnvType, reqVO.getEnvType())
                 .betweenIfPresent(ServerDO::getCreateTime, reqVO.getBeginCreateTime(), reqVO.getEndCreateTime())
                 .eqIfPresent(ServerDO::getRemark, reqVO.getRemark())
                 .orderByDesc(ServerDO::getId));

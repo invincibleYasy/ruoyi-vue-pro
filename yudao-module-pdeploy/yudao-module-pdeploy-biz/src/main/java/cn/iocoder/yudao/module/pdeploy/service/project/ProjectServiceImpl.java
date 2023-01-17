@@ -1,16 +1,17 @@
 package cn.iocoder.yudao.module.pdeploy.service.project;
 
+import cn.hutool.json.JSONUtil;
 import cn.iocoder.yudao.framework.common.util.json.JsonUtils;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
-import cn.iocoder.yudao.framework.mybatis.core.query.QueryWrapperX;
 import cn.iocoder.yudao.module.pdeploy.controller.admin.module.vo.ModuleRespVO;
-import cn.iocoder.yudao.module.pdeploy.controller.admin.server.vo.ServerRespVO;
-import cn.iocoder.yudao.module.pdeploy.convert.server.ServerConvert;
+import cn.iocoder.yudao.module.pdeploy.dal.dataobject.BaseVars;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.DynamicVars;
+import cn.iocoder.yudao.module.pdeploy.dal.dataobject.GenServerStrategy;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.baseline.BaselineDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.module.ModuleDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.process.ProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.projectconf.ProjectConfDO;
+import cn.iocoder.yudao.module.pdeploy.dal.dataobject.projectmodule.ProjectModuleDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.server.ServerDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.serverprocess.ServerProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.baseline.BaselineMapper;
@@ -20,12 +21,14 @@ import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectconf.ProjectConfMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectmodule.ProjectModuleMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.server.ServerMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.serverprocess.ServerProcessMapper;
+import cn.iocoder.yudao.module.pdeploy.enums.EnvType;
+import cn.iocoder.yudao.module.pdeploy.enums.DeployStep;
+import cn.iocoder.yudao.module.pdeploy.service.baseline.RepresenterNull2Empty;
 import cn.iocoder.yudao.module.pdeploy.service.projectmodule.ProjectModuleService;
-import cn.iocoder.yudao.module.pdeploy.service.server.ServerService;
-import jdk.nashorn.internal.objects.annotations.Function;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.compress.utils.Lists;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -34,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import cn.iocoder.yudao.module.pdeploy.controller.admin.project.vo.*;
@@ -44,7 +48,7 @@ import cn.iocoder.yudao.module.pdeploy.convert.project.ProjectConvert;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.project.ProjectMapper;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.nodes.Tag;
+import org.yaml.snakeyaml.representer.Representer;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.pdeploy.enums.ErrorCodeConstants.*;
@@ -66,8 +70,6 @@ public class ProjectServiceImpl implements ProjectService {
     private ServerMapper serverMapper;
     @Resource
     private ServerProcessMapper serverProcessMapper;
-    @Resource
-    private ServerService serverService;
     @Resource
     private ProjectConfMapper projectConfMapper;
     @Resource
@@ -104,6 +106,8 @@ public class ProjectServiceImpl implements ProjectService {
         project.setProjConfJson(JsonUtils.toJsonPrettyString(dynamicVars));
         Set<String> allTags = moduleDOS.stream().map(ModuleDO::getTag).collect(Collectors.toSet());
         allTags.add("init");
+        allTags.add("precheck");
+        allTags.add("postcheck");
         allTags.add("all");
         Set<String> midwareTags = moduleDOS.stream().map(moduleDO -> {
             if (StringUtils.isNotEmpty(moduleDO.getMidwareTags())) {
@@ -185,6 +189,88 @@ public class ProjectServiceImpl implements ProjectService {
         }
     }
 
+    private void genServers(Long projectId) {
+        ProjectDO projectDO = projectMapper.selectById(projectId);
+        if (null != projectDO) {
+            String allProjTags = projectDO.getAllProjTags();
+            if (StringUtils.isNotEmpty(allProjTags)) {
+                List<String> tags = Arrays.asList(allProjTags.split(","));
+                List<ModuleDO> moduleDOS = moduleMapper.selectList(new LambdaQueryWrapperX<ModuleDO>()
+                        .inIfPresent(ModuleDO::getTag, tags)
+                        .inIfPresent(ModuleDO::getModuleType, Arrays.asList(DeployStep.DEPLOY_MID.getValue(), DeployStep.DEPLOY_APP.getValue())));
+                Map<String, GenServerStrategy> strategyMap = GenServerStrategy.serverStrategyMap();
+                List<ServerDO> servers = new ArrayList<>();
+                AtomicInteger ipStart = new AtomicInteger(1);
+                moduleDOS.forEach(moduleDO -> {
+                    //环境服务器
+                    GenServerStrategy strategy = strategyMap.get(moduleDO.getTag());
+                    Integer minNum = strategy.getMinNum();
+                    Integer clusterNum = strategy.getClusterNum();
+                    for (int i = 0; i < minNum; i++) {
+                        String serverSuffix = i + 1 + "";
+                        if (i == 0) {
+                            serverSuffix += "__主要";
+                        }
+                        servers.add(ServerDO.builder()
+                                .baselineId(projectDO.getBaselineId())
+                                .projectId(projectId)
+                                .tag(moduleDO.getTag())
+                                .name("测试环境_" + moduleDO.getName() + "_" + serverSuffix)
+                                .ip("10.88.88." + ipStart.getAndIncrement())
+                                .cpu(strategy.getMinCpu())
+                                .memory(strategy.getMinMemory())
+                                .envType(EnvType.STAGING.getValue())
+                                .build());
+                    }
+                    for (int i = 0; i < clusterNum; i++) {
+                        String serverSuffix = i + 1 + "";
+                        if (i == 0) {
+                            serverSuffix += "__主要";
+                        }
+                        servers.add(ServerDO.builder()
+                                .baselineId(projectDO.getBaselineId())
+                                .projectId(projectId)
+                                .tag(moduleDO.getTag())
+                                .name("生产环境_" + moduleDO.getName() + "_" + serverSuffix)
+                                .ip("10.88.88." + ipStart.getAndIncrement())
+                                .cpu(strategy.getMinCpu())
+                                .memory(strategy.getMinMemory())
+                                .envType(EnvType.PROD.getValue())
+                                .build());
+                    }
+                });
+                serverMapper.insertBatch(servers);
+                // 生产测试环境服务进程关系
+                servers.forEach(serverDO -> {
+                    String tag = serverDO.getTag();
+                    List<ProcessDO> processDOS = processMapper.selectList(new LambdaQueryWrapperX<ProcessDO>()
+                            .inIfPresent(ProcessDO::getProcessType, Arrays.asList(DeployStep.DEPLOY_MID.getValue(), DeployStep.DEPLOY_APP.getValue()))
+                            .eqIfPresent(ProcessDO::getTag, tag)
+                    );
+                    List<ProcessDO> filterProcess = processDOS.stream().filter(ProcessDO::getIsHa).collect(Collectors.toList());
+
+                    List<ServerProcessDO> serverProcessDOS = new ArrayList<>();
+                    if (serverDO.getName().contains("__主要")) {
+                        processDOS.forEach(processDO -> {
+                            serverProcessDOS.add(ServerProcessDO.builder()
+                                    .serverId(serverDO.getId())
+                                    .processId(processDO.getId())
+                                    .build());
+                        });
+                    } else {
+                        filterProcess.forEach(processDO -> {
+                            serverProcessDOS.add(ServerProcessDO.builder()
+                                    .serverId(serverDO.getId())
+                                    .processId(processDO.getId())
+                                    .build());
+                        });
+                    }
+                    serverProcessMapper.insertBatch(serverProcessDOS);
+                });
+            }
+        }
+    }
+
     @Override
     public ProjectProcessRespVo getProjectProcess(Long projectId) {
         ProjectDO projectDO = projectMapper.selectById(projectId);
@@ -198,17 +284,16 @@ public class ProjectServiceImpl implements ProjectService {
                 return allProjTags.containsAll(confTagFilters);
             }).collect(Collectors.groupingBy(ProcessDO::getProcessType, Collectors.toList()));
             //3,2,4,1
-            List<ProcessDO> processDOS1 = processMap.get(3);
-            List<ProcessDO> processDOS2 = processMap.get(2);
-            List<ProcessDO> processDOS3 = processMap.get(4);
-            List<ProcessDO> processDOS4 = processMap.get(1);
-            ProjectProcessRespVo build = ProjectProcessRespVo.builder()
+            List<ProcessDO> processDOS1 = processMap.get(DeployStep.CHECK_AND_INIT_ENV.getValue());
+            List<ProcessDO> processDOS2 = processMap.get(DeployStep.DEPLOY_MID.getValue());
+            List<ProcessDO> processDOS3 = processMap.get(DeployStep.INIT_MID.getValue());
+            List<ProcessDO> processDOS4 = processMap.get(DeployStep.DEPLOY_APP.getValue());
+            return ProjectProcessRespVo.builder()
                     .initEnv(ProjectProcessRespVo.ProjectProcess.builder().name("检查&初始化环境").processes(processDOS1).build())
                     .deployMidware(ProjectProcessRespVo.ProjectProcess.builder().name("部署中间件").processes(processDOS2).build())
                     .initMidware(ProjectProcessRespVo.ProjectProcess.builder().name("初始化中间件").processes(processDOS3).build())
                     .deployApp(ProjectProcessRespVo.ProjectProcess.builder().name("部署应用").processes(processDOS4).build())
                     .build();
-            return build;
         }
         return ProjectProcessRespVo.builder().build();
     }
@@ -282,23 +367,14 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     @Transactional
-    public ProjectExtendRespVO extendProject(ProjectExtendReqVO extendReqVO) {
-        Long extendProjectId = extendReqVO.getExtendProjectId();
-        Long currentProjectId = extendReqVO.getCurrentProjectId();
-        if (null == extendProjectId || null == currentProjectId) {
-            throw exception(PROJECT_EXTEND_ERROR);
-        }
-        // 获取继承项目下的服务器
-        List<ServerRespVO> serverRespVOS = serverService.getServersByProjectId(extendProjectId);
-        if (CollectionUtils.isEmpty(serverRespVOS)) {
-            throw exception(PROJECT_EXTEND_NO_SERVER_ERROR);
-        }
+    public void genServers(GenServersReqVO genServersReqVO) {
+        Long currentProjectId = genServersReqVO.getProjectId();
         // 获取当前项目下的模块信息
+        projectModuleMapper.selectCount(new LambdaQueryWrapperX<ProjectModuleDO>().eqIfPresent(ProjectModuleDO::getProjectId, currentProjectId));
         List<ModuleRespVO> modules = projectModuleService.getModulesByProjectId(currentProjectId);
         if (CollectionUtils.isEmpty(modules)) {
             throw exception(PROJECT_EXTEND_NO_MODULE_ERROR);
         }
-        Set<Long> processesIds = modules.stream().map(ModuleRespVO::getProcesses).flatMap(Collection::stream).map(ProcessDO::getId).collect(Collectors.toSet());
         // 获取当前项目下的服务器
         List<ServerDO> currentServerDOs = serverMapper.selectList("project_id", currentProjectId);
         if (CollectionUtils.isNotEmpty(currentServerDOs)) {
@@ -311,39 +387,7 @@ public class ProjectServiceImpl implements ProjectService {
                 serverProcessMapper.deleteByMap(deleteParams);
             });
         }
-        //插入继承的服务器和进程信息
-        List<ServerRespVO> servers = new ArrayList<>();
-        serverRespVOS.forEach(serverRespVO -> {
-            List<ProcessDO> processes = serverRespVO.getProcesses();
-            if (CollectionUtils.isNotEmpty(processes)) {
-                // 进程交集
-                List<ProcessDO> collects = processes.stream()
-                        .filter(process -> processesIds.contains(process.getId())).collect(Collectors.toList());
-                if (CollectionUtils.isNotEmpty(collects)) {
-                    ServerDO build = ServerDO.builder()
-                            .projectId(currentProjectId)
-                            .cpu(serverRespVO.getCpu())
-                            .memory(serverRespVO.getMemory())
-                            .baselineId(serverRespVO.getBaselineId())
-                            .name(serverRespVO.getName())
-                            .remark(serverRespVO.getRemark())
-                            .build();
-                    serverMapper.insert(build);
-                    List<ServerProcessDO> serverProcessDOS = new ArrayList<>();
-                    collects.forEach(collect -> {
-                        serverProcessDOS.add(ServerProcessDO.builder().processId(collect.getId()).serverId(build.getId()).build());
-                    });
-                    serverProcessMapper.insertBatch(serverProcessDOS);
-                    ServerRespVO convert = ServerConvert.INSTANCE.convert(build);
-                    convert.setProcesses(collects);
-                    servers.add(convert);
-                }
-            }
-        });
-        ProjectExtendRespVO projectExtendRespVO = new ProjectExtendRespVO();
-        projectExtendRespVO.setServers(servers);
-        return projectExtendRespVO;
-
+        genServers(currentProjectId);
     }
 
     @Override
@@ -383,49 +427,193 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public void syncBaselineConf(ProjectUpdateReqVO updateReqVO) {
-        batchSaveProjectConf(updateReqVO.getId(), updateReqVO.getBaselineId(), Collections.singletonList(updateReqVO.getType()));
+        batchSaveProjectConf(updateReqVO.getId(), updateReqVO.getBaselineId(), updateReqVO.getTypes());
+    }
+
+    private Map<String, BaseVars> assignConf(List<ProjectConfDO> projConfList, String tag) {
+        Map<String, BaseVars> baseVarsMap = new HashMap<>();
+        BaseVars baseVars = new BaseVars();
+        Map<String, Object> vars = new HashMap<>();
+        Map<String, String> imageTags = new HashMap<>();
+        projConfList.forEach(projConf -> {
+            if (DeployStep.SYNC_MID_IMAGES.getValue().equals(projConf.getType())
+                    || DeployStep.SYNC_MOD_IMAGES.getValue().equals(projConf.getType())) {
+                imageTags.put(projConf.getConfKey(), projConf.getConfValue());
+                return;
+            }
+            Object confValue = projConf.getConfValue();
+            if (JSONUtil.isTypeJSONArray(confValue.toString())) {
+                confValue = JsonUtils.parseObject(confValue.toString(), Object.class);
+            }
+            if ("true".equals(confValue) || "false".equals(confValue)) {
+                confValue = Boolean.valueOf(confValue.toString());
+            }
+            vars.put(projConf.getConfKey(), confValue);
+        });
+        if (MapUtils.isNotEmpty(vars)) {
+            baseVars.setVars(vars);
+        }
+        if (MapUtils.isNotEmpty(imageTags)) {
+            baseVars.setImage_tags(imageTags);
+        }
+        if (MapUtils.isNotEmpty(vars) || MapUtils.isNotEmpty(imageTags)) {
+            baseVarsMap.put(tag, baseVars);
+            return baseVarsMap;
+        }
+        return null;
     }
 
     @Override
     public ProjectConfRespVO showBaselineConf(ProjectUpdateReqVO updateReqVO) {
-        Long baselineId = updateReqVO.getBaselineId();
-        BaselineDO baselineDO = baselineMapper.selectById(baselineId);
-        ProjectConfRespVO projectConfRespVO = new ProjectConfRespVO();
-        if (null == baselineDO) {
-            return projectConfRespVO;
-        }
-        String mainConf = baselineDO.getBaselineConfYaml();
-        LinkedHashMap mainConfMap = null;
-        Yaml mainConfYaml = new Yaml();
-        if (StringUtils.isNotEmpty(mainConf)) {
-            mainConfMap = mainConfYaml.loadAs(mainConf, LinkedHashMap.class);
-        }
-        String mainConfCcpass = baselineDO.getBaselineConfJson();
-        LinkedHashMap mainConfCcpassMap = null;
-        Yaml mainConfCcpassYaml = new Yaml();
-        if (StringUtils.isNotEmpty(mainConfCcpass)) {
-            mainConfCcpassMap = mainConfCcpassYaml.loadAs(mainConfCcpass, LinkedHashMap.class);
-        }
-        // 获取项目可变配置
+        // 更新项目配置
         List<ProjectConfDO> projectConfDOS = projectConfMapper.selectList(new LambdaQueryWrapperX<ProjectConfDO>()
-                .eq(ProjectConfDO::getProjectId, updateReqVO.getId())
-                .eq(ProjectConfDO::getBaselineId, baselineId)
-                .eq(ProjectConfDO::getModifyFlag, true));
-
+                .eqIfPresent(ProjectConfDO::getProjectId, updateReqVO.getId()));
         if (CollectionUtils.isNotEmpty(projectConfDOS)) {
-            for (ProjectConfDO projectConfDO : projectConfDOS) {
-                Integer type = projectConfDO.getType();
-                if (1 == type && null != mainConfMap) {
-                    assignConfValue(projectConfDO, mainConfMap);
-                    projectConfRespVO.setMainConf(mainConfYaml.dumpAs(mainConfMap, Tag.MAP, DumperOptions.FlowStyle.BLOCK));
+            Map<String, List<ProjectConfDO>> projConfMap = projectConfDOS.stream().collect(Collectors.groupingBy(projectConfDO -> {
+                Integer confType = projectConfDO.getType();
+                if (DeployStep.SYNC_MID_IMAGES.getValue().equals(projectConfDO.getType())) {
+                    confType = DeployStep.DEPLOY_MID.getValue();
+                } else if (DeployStep.SYNC_MOD_IMAGES.getValue().equals(projectConfDO.getType())) {
+                    confType = DeployStep.DEPLOY_APP.getValue();
                 }
-                if (2 == type && null != mainConfCcpassMap) {
-                    assignConfValue(projectConfDO, mainConfCcpassMap);
-                    projectConfRespVO.setCcpassConf(mainConfYaml.dumpAsMap(mainConfCcpassMap));
+                return confType + "_" + projectConfDO.getTag();
+            }));
+            DynamicVars dynamicVars = new DynamicVars();
+            projConfMap.forEach((type_tag, projConfList) -> {
+                String[] arr = type_tag.split("_");
+                DeployStep deployStep = DeployStep.getByValue(Integer.valueOf(arr[0]));
+                Map<String, BaseVars> baseVarsMap = assignConf(projConfList, arr[1]);
+                if (null == baseVarsMap) {
+                    return;
                 }
-            }
+                switch (deployStep) {
+                    case CHECK_AND_INIT_ENV:
+                        if (MapUtils.isEmpty(dynamicVars.getEnv())) {
+                            dynamicVars.setEnv(baseVarsMap);
+                        } else {
+                            dynamicVars.getEnv().putAll(baseVarsMap);
+                        }
+                        break;
+                    case PLAN_MID:
+                        if (MapUtils.isEmpty(dynamicVars.getMidwares_plan())) {
+                            dynamicVars.setMidwares_plan(baseVarsMap);
+                        } else {
+                            dynamicVars.getMidwares_plan().putAll(baseVarsMap);
+                        }
+                        break;
+                    case DEPLOY_APP:
+                        if (MapUtils.isEmpty(dynamicVars.getModels())) {
+                            dynamicVars.setModels(baseVarsMap);
+                        } else {
+                            dynamicVars.getModels().putAll(baseVarsMap);
+                        }
+                        break;
+                    case DEPLOY_MID:
+                        if (MapUtils.isEmpty(dynamicVars.getMidwares())) {
+                            dynamicVars.setMidwares(baseVarsMap);
+                        } else {
+                            dynamicVars.getMidwares().putAll(baseVarsMap);
+                        }
+                        break;
+                    case INIT_MID:
+                        if (MapUtils.isEmpty(dynamicVars.getMidwares_init())) {
+                            dynamicVars.setMidwares_init(baseVarsMap);
+                        } else {
+                            dynamicVars.getMidwares_init().putAll(baseVarsMap);
+                        }
+                        break;
+                    case INIT_APP:
+                    case CHECK_APP:
+                    default:
+                        break;
+
+                }
+            });
+            ProjectConfRespVO confRespVO = new ProjectConfRespVO();
+            String projConfJson = JsonUtils.toJsonPrettyString(dynamicVars);
+            Object projConfYamlObj = JsonUtils.parseObject(projConfJson, Object.class);
+            DumperOptions options = new DumperOptions();
+            options.setIndentWithIndicator(true);
+            options.setIndicatorIndent(2);
+            Yaml yaml = new Yaml(options);
+            String projConfYaml = yaml.dumpAsMap(projConfYamlObj);
+            ProjectDO build = ProjectDO.builder()
+                    .projConfJson(projConfJson)
+                    .id(updateReqVO.getId())
+                    .projConfYaml(projConfYaml)
+                    .build();
+            projectMapper.updateById(build);
+            confRespVO.setProjConfJson(projConfJson);
+            confRespVO.setProjConfYaml(projConfYaml);
+            confRespVO.setAnsibleHosts(genAnsibleHosts(updateReqVO));
+            return confRespVO;
         }
-        return projectConfRespVO;
+
+        return null;
+    }
+
+    private String genAnsibleHosts(ProjectUpdateReqVO updateReqVO) {
+        Long projectId = updateReqVO.getId();
+        List<ServerDO> serverDOS = serverMapper.selectList(new LambdaQueryWrapperX<ServerDO>()
+                .eqIfPresent(ServerDO::getProjectId, projectId)
+        );
+        Set<Long> serverIds = serverDOS.stream().map(ServerDO::getId).collect(Collectors.toSet());
+        Set<String> allHosts = serverDOS.stream().map(ServerDO::getIp).collect(Collectors.toSet());
+        List<ServerProcessDO> serverProcessDOS = serverProcessMapper.selectList(new LambdaQueryWrapperX<ServerProcessDO>()
+                .inIfPresent(ServerProcessDO::getServerId, serverIds)
+        );
+
+        Set<Long> processIds = serverProcessDOS.stream().map(ServerProcessDO::getProcessId).collect(Collectors.toSet());
+
+        List<ProcessDO> processDOS = processMapper.selectList(new LambdaQueryWrapperX<ProcessDO>()
+                .inIfPresent(ProcessDO::getId, processIds)
+        );
+
+        Map<Long, Set<Long>> processServerMap = serverProcessDOS.stream().collect(Collectors.groupingBy(ServerProcessDO::getProcessId, Collectors.mapping(ServerProcessDO::getServerId, Collectors.toSet())));
+
+        Map<String, Object> ansibleHosts = new LinkedHashMap<>();
+        Map<String, Object> allVal = new LinkedHashMap<>();
+        Map<String, Object> varsVal = new LinkedHashMap<>();
+        Map<String, Object> childrenVal = new LinkedHashMap<>();
+        Map<String, Object> allNodesHosts = new LinkedHashMap<>();
+        Map<String, Object> allNodesHostsVal = new LinkedHashMap<>();
+        allNodesHosts.put("hosts", allNodesHostsVal);
+        childrenVal.put("all_nodes", allNodesHosts);
+        allVal.put("children", childrenVal);
+        allVal.put("vars", varsVal);
+        ansibleHosts.put("all", allVal);
+        allHosts.forEach(host -> {
+            allNodesHostsVal.put(host, null);
+        });
+        varsVal.put("ansible_ssh_user", "root");
+        processServerMap.forEach((processId, servers) -> {
+            ProcessDO processDO = processDOS.stream().filter(s -> s.getId().equals(processId)).findFirst().orElse(null);
+            if (null != processDO) {
+                String name = processDO.getName(); // shared_mysql
+                if (StringUtils.isEmpty(name)) {
+                    return;
+                }
+                name = name.replace("-", "_");
+                Map<String, Object> nameHosts = new LinkedHashMap<>();
+                Map<String, Object> nameHostsVal = new LinkedHashMap<>();
+                List<String> ips = serverDOS.stream().filter(s -> servers.contains(s.getId())).map(ServerDO::getIp).collect(Collectors.toList());// shared_mysql00x
+                for (int i = 0; i < ips.size(); i++) {
+                    Map<String, Object> nameHostsNVal = new LinkedHashMap<>();
+                    nameHostsNVal.put("ansible_ssh_host", ips.get(i));
+                    nameHostsNVal.put("ansible_public_host", ips.get(i));
+                    nameHostsVal.put(name + "00" + (i + 1), nameHostsNVal);
+                }
+                nameHosts.put("hosts", nameHostsVal);
+                childrenVal.put(name, nameHosts);
+            }
+        });
+
+        DumperOptions options = new DumperOptions();
+        options.setIndentWithIndicator(true);
+        options.setIndicatorIndent(2);
+        Representer representer = new RepresenterNull2Empty();
+        Yaml yaml = new Yaml(representer, options);
+        return yaml.dumpAsMap(ansibleHosts);
     }
 
     @Override

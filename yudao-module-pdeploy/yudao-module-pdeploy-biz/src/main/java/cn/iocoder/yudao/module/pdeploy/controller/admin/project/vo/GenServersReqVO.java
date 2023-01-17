@@ -10,7 +10,6 @@ import java.util.Set;
 @ApiModel("管理后台 - 私有项目继承 Request VO")
 @Data
 @ToString(callSuper = true)
-public class ProjectExtendReqVO {
-    private Long extendProjectId;
-    private Long currentProjectId;
+public class GenServersReqVO {
+    private Long projectId;
 }

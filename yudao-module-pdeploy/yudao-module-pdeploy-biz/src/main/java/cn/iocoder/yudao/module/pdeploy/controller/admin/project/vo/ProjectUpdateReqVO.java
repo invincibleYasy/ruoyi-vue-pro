@@ -16,4 +16,5 @@ public class ProjectUpdateReqVO extends ProjectBaseVO {
     private Long id;
     private Set<Long> moduleIds;
     private Integer type;
+    private List<Integer> types;
 }

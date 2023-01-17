@@ -4,7 +4,6 @@ import java.util.*;
 import javax.validation.*;
 
 import cn.iocoder.yudao.module.pdeploy.controller.admin.project.vo.*;
-import cn.iocoder.yudao.module.pdeploy.dal.dataobject.process.ProcessDO;
 import cn.iocoder.yudao.module.pdeploy.dal.dataobject.project.ProjectDO;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 
@@ -70,7 +69,7 @@ public interface ProjectService {
      */
     List<ProjectDO> getProjectList(ProjectExportReqVO exportReqVO);
 
-    ProjectExtendRespVO extendProject(ProjectExtendReqVO extendReqVO);
+    void genServers(GenServersReqVO extendReqVO);
 
     void mergerServer(MergeServerReqVO mergeServerReqVO);
 
@@ -85,4 +84,5 @@ public interface ProjectService {
     void batchSaveProjectConf(Long projectId, Long baselineId, List<Integer> types);
 
     ProjectProcessRespVo getProjectProcess(Long projectId);
+
 }

@@ -1,8 +1,8 @@
 package cn.iocoder.yudao.module.pdeploy.dal.dataobject.server;
 
-import cn.iocoder.yudao.module.pdeploy.dal.dataobject.process.ProcessDO;
 import lombok.*;
-import java.util.*;
+
+
 import com.baomidou.mybatisplus.annotation.*;
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
 
@@ -28,7 +28,7 @@ public class ServerDO extends BaseDO {
     private Long id;
     /**
      * 基线版本
-     *
+     * <p>
      * 枚举 {@link TODO system_user_sex 对应的类}
      */
     private Long baselineId;
@@ -40,6 +40,8 @@ public class ServerDO extends BaseDO {
      * 服务器名称
      */
     private String name;
+
+    private String tag;
     /**
      * 服务器IP
      */
@@ -48,6 +50,8 @@ public class ServerDO extends BaseDO {
      * CPU
      */
     private Integer cpu;
+
+    private Integer envType;
     /**
      * 内存(GB)
      */

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.pdeploy.controller.admin.server.vo;
 
+import com.alibaba.excel.annotation.ExcelProperty;
 import lombok.*;
 import java.util.*;
 import io.swagger.annotations.*;
@@ -31,6 +32,12 @@ public class ServerPageReqVO extends PageParam {
 
     @ApiModelProperty(value = "内存(GB)")
     private Integer memory;
+
+    @ApiModelProperty(value = "所属环境")
+    private Integer envType;
+
+    @ExcelProperty(value = "标签")
+    private String tag;
 
     @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
     @ApiModelProperty(value = "开始创建时间")

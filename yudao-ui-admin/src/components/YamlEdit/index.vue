@@ -25,6 +25,11 @@ export default {
       type: Boolean,
       default: false,
       required: false
+    },
+    mode: {
+      type: String,
+      default: 'text/x-yaml',
+      required: false
     }
   },
   data() {
@@ -45,7 +50,7 @@ export default {
   },
   mounted() {
     this.editor = CodeMirror.fromTextArea(this.$refs.textarea, {
-      mode: 'text/x-yaml',
+      mode: this.mode,
       lineNumbers: true,
       lint: true,
       lineWrapping: true,

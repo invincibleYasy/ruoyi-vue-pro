@@ -14,6 +14,7 @@ import cn.iocoder.yudao.module.pdeploy.dal.mysql.moduleprocess.ModuleProcessMapp
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.process.ProcessMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectconf.ProjectConfMapper;
 import cn.iocoder.yudao.module.pdeploy.dal.mysql.projectmodule.ProjectModuleMapper;
+import cn.iocoder.yudao.module.pdeploy.enums.DeployStep;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -141,14 +142,6 @@ public class BaselineServiceImpl implements BaselineService {
             parseMidWares(id, dynamicVars);
             // 解析模块信息
             parseModels(id, dynamicVars);
-            // 更新占位符
-//            DumperOptions options = new DumperOptions();
-//            options.setIndentWithIndicator(true);
-//            options.setIndicatorIndent(2);
-//            Yaml yaml = new Yaml(new RepresenterNull2Empty(), options);
-//            String dump = yaml.dumpAsMap(dynamicVars);
-//            BaselineDO build = BaselineDO.builder().id(id).baselineConfYaml(dump).build();
-//            baselineMapper.updateById(build);
         }
     }
 
@@ -156,39 +149,40 @@ public class BaselineServiceImpl implements BaselineService {
     private void parseEnv(Long id, DynamicVars dynamicVars) {
         Map<String, BaseVars> env = dynamicVars.getEnv();
         if (MapUtils.isNotEmpty(env)) {
-            parse(id, env, 3);
-        }
-    }
-
-    private void parseMidwaresInit(Long id, DynamicVars dynamicVars) {
-        Map<String, BaseVars> midwaresInit = dynamicVars.getMidwares_init();
-        if (MapUtils.isNotEmpty(midwaresInit)) {
-            parse(id, midwaresInit, 4);
+            parse(id, env, DeployStep.CHECK_AND_INIT_ENV);
         }
     }
 
     private void parseMidwaresPlan(Long id, DynamicVars dynamicVars) {
         Map<String, BaseVars> midwaresConfig = dynamicVars.getMidwares_plan();
         if (MapUtils.isNotEmpty(midwaresConfig)) {
-            parse(id, midwaresConfig, 5);
+            parse(id, midwaresConfig, DeployStep.PLAN_MID);
         }
     }
 
     private void parseMidWares(Long id, DynamicVars dynamicVars) {
         Map<String, BaseVars> midwares = dynamicVars.getMidwares();
         if (MapUtils.isNotEmpty(midwares)) {
-            parse(id, midwares, 2);
+            parse(id, midwares, DeployStep.DEPLOY_MID);
+        }
+    }
+
+    private void parseMidwaresInit(Long id, DynamicVars dynamicVars) {
+        Map<String, BaseVars> midwaresInit = dynamicVars.getMidwares_init();
+        if (MapUtils.isNotEmpty(midwaresInit)) {
+            parse(id, midwaresInit, DeployStep.INIT_MID);
         }
     }
 
     private void parseModels(Long id, DynamicVars dynamicVars) {
         Map<String, BaseVars> models = dynamicVars.getModels();
         if (MapUtils.isNotEmpty(models)) {
-            parse(id, models, 1);
+            parse(id, models, DeployStep.DEPLOY_APP);
         }
     }
 
-    private void parse(Long id, Map<String, BaseVars> maps, Integer type) {
+    private void parse(Long id, Map<String, BaseVars> maps, DeployStep deployStep) {
+        Integer type = deployStep.getValue();
         maps.forEach((key, value) -> {
             if (null == value) {
                 return;
@@ -221,6 +215,7 @@ public class BaselineServiceImpl implements BaselineService {
                     processDO.setBaselineId(id);
                     processDO.setName(ansibleService.getName());
                     processDO.setProcessType(type);
+                    processDO.setIsHa(ansibleService.getAllow_repeat());
                     processDO.setTag(key);
                     processDO.setTagFilter(ansibleService.getTag_filter());
                     processDOS.add(processDO);
@@ -250,7 +245,7 @@ public class BaselineServiceImpl implements BaselineService {
                             .confKey(confKey)
                             .confValue(confValue)
                             .confValuePlaceholder(key + "_" + confKey)
-                            .type(2)
+                            .type(DeployStep.DEPLOY_APP.equals(deployStep) ? DeployStep.SYNC_MOD_IMAGES.getValue() : DeployStep.SYNC_MID_IMAGES.getValue())
                             .modifyFlag(true)
                             .build();
                     projectConfDOS.add(confDO);
@@ -274,7 +269,7 @@ public class BaselineServiceImpl implements BaselineService {
                             .confKey(confKey)
                             .confValue(confValue.toString())
                             .confValuePlaceholder(key + "_" + confKey)
-                            .type(5 == type ? 3 : 1)
+                            .type(deployStep.getValue())
                             .modifyFlag(true)
                             .build();
                     projectConfDOS.add(confDO);

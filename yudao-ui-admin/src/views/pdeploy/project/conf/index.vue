@@ -18,12 +18,12 @@
       <el-form-item label="配置键" prop="confKey">
         <el-input v-model="queryParams.confKey" placeholder="请输入键" clearable @keyup.enter.native="handleQuery"/>
       </el-form-item>
-<!--      <el-form-item label="Modify" prop="modifyFlag" v-if="source === 1">-->
-<!--        <el-select v-model="queryParams.modifyFlag" placeholder="请选择是否需修改" clearable size="small">-->
-<!--          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_YES_NO)"-->
-<!--                     :key="dict.value" :label="dict.label" :value="dict.value"/>-->
-<!--        </el-select>-->
-<!--      </el-form-item>-->
+      <!--      <el-form-item label="Modify" prop="modifyFlag" v-if="source === 1">-->
+      <!--        <el-select v-model="queryParams.modifyFlag" placeholder="请选择是否需修改" clearable size="small">-->
+      <!--          <el-option v-for="dict in this.getDictDatas(DICT_TYPE.SYSTEM_YES_NO)"-->
+      <!--                     :key="dict.value" :label="dict.label" :value="dict.value"/>-->
+      <!--        </el-select>-->
+      <!--      </el-form-item>-->
       <el-form-item label="配置类型" prop="type">
         <el-select v-model="queryParams.type" placeholder="请选择配置类型" clearable size="small" v-if="source === 1">
           <el-option v-for="dict in this.getDictDatas(DICT_TYPE.ANSIBLE_CONF_TYPE)"
@@ -38,8 +38,23 @@
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" @click="resetQuery">重置</el-button>
         <el-button type="warning" icon="el-icon-refresh" @click="syncConf" v-if="source !==1">同步基线配置</el-button>
+        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport"
+                   :loading="exportLoading"
+                   v-hasPermi="['pdeploy:project-conf:export']">导出
+        </el-button>
       </el-form-item>
     </el-form>
+
+<!--    &lt;!&ndash; 操作工具栏 &ndash;&gt;-->
+<!--    <el-row :gutter="10" class="mb8">-->
+<!--      <el-col :span="1.5">-->
+<!--        <el-button type="warning" plain icon="el-icon-download" size="mini" @click="handleExport"-->
+<!--                   :loading="exportLoading"-->
+<!--                   v-hasPermi="['pdeploy:project-conf:export']">导出-->
+<!--        </el-button>-->
+<!--      </el-col>-->
+<!--      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>-->
+<!--    </el-row>-->
 
     <!-- 列表 -->
     <el-table v-loading="loading" :data="list">
@@ -57,14 +72,14 @@
       <el-table-column label="配置标签" align="center" prop="tag"/>
       <el-table-column label="键" align="center" prop="confKey"/>
       <el-table-column label="值" align="center" prop="confValue"/>
-<!--      <el-table-column label="是否需修改" align="center" prop="modifyFlag">-->
-<!--        <template slot-scope="scope">-->
-<!--          <el-switch-->
-<!--            v-model="scope.row.modifyFlag"-->
-<!--          />-->
-<!--          &lt;!&ndash;          <dict-tag :type="DICT_TYPE.SYSTEM_YES_NO" :value="scope.row.modifyFlag"/>&ndash;&gt;-->
-<!--        </template>-->
-<!--      </el-table-column>-->
+      <!--      <el-table-column label="是否需修改" align="center" prop="modifyFlag">-->
+      <!--        <template slot-scope="scope">-->
+      <!--          <el-switch-->
+      <!--            v-model="scope.row.modifyFlag"-->
+      <!--          />-->
+      <!--          &lt;!&ndash;          <dict-tag :type="DICT_TYPE.SYSTEM_YES_NO" :value="scope.row.modifyFlag"/>&ndash;&gt;-->
+      <!--        </template>-->
+      <!--      </el-table-column>-->
       <el-table-column label="配置类型" align="center" prop="type">
         <template scope="scope">
           <dict-tag :type="DICT_TYPE.ANSIBLE_CONF_TYPE" :value="scope.row.type"/>
@@ -95,11 +110,11 @@
         <el-form-item label="值" prop="confValue">
           <el-input v-model="form.confValue" placeholder="请输入值"/>
         </el-form-item>
-<!--        <el-form-item label="是否需修改" prop="modifyFlag" v-if="source === 1">-->
-<!--          <el-switch-->
-<!--            v-model="form.modifyFlag"-->
-<!--          />-->
-<!--        </el-form-item>-->
+        <!--        <el-form-item label="是否需修改" prop="modifyFlag" v-if="source === 1">-->
+        <!--          <el-switch-->
+        <!--            v-model="form.modifyFlag"-->
+        <!--          />-->
+        <!--        </el-form-item>-->
         <el-form-item label="配置类型" prop="type" v-if="source === 1 ">
           <el-select v-model="form.type" placeholder="请选择配置类型">
             <el-option v-for="dict in this.getDictDatas(DICT_TYPE.ANSIBLE_CONF_TYPE)"
@@ -156,7 +171,7 @@ export default {
       default: 1,
     },
     superConfType: {
-      type: String,
+      type: Array,
       default: []
     },
     superProjectId: {
@@ -211,9 +226,6 @@ export default {
     };
   },
   created() {
-    console.log(this.superConfType)
-    console.log(this.superProjectId)
-    console.log(this.superBaselineId)
     if (this.superProjectId) {
       this.queryParams.projectId = this.superProjectId;
     }
@@ -221,7 +233,7 @@ export default {
       this.queryParams.baselineId = this.superBaselineId;
     }
     if (this.superConfType) {
-      this.queryParams.type = this.superConfType;
+      this.queryParams.types = this.superConfType;
     }
     getAllProjects().then(res => {
       this.projects = this.projects.concat(res.data.list);
@@ -280,7 +292,8 @@ export default {
       let params = {
         baselineId: this.queryParams.baselineId,
         id: this.queryParams.projectId,
-        type: this.queryParams.type
+        type: this.queryParams.type,
+        types: this.queryParams.types
       }
       syncProjectConf(params).then(res => {
         this.loading = false

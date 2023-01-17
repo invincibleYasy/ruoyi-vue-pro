@@ -82,9 +82,9 @@ export function getAllProjects() {
   })
 }
 
-export function extendProject(data) {
+export function genServers(data) {
   return request({
-    url: "pdeploy/project/extend",
+    url: "pdeploy/project/genServers",
     method: 'post',
     data: data,
   })

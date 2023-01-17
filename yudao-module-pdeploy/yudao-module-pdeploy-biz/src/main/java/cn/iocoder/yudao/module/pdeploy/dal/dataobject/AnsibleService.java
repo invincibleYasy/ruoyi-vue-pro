@@ -1,11 +1,13 @@
 package cn.iocoder.yudao.module.pdeploy.dal.dataobject;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class AnsibleService {
     private String name;
     private String check_sub_domain;
-    private Boolean cluster = true;
     private String tag_filter = "all";
+    private Boolean allow_repeat = true;
 
     public String getName() {
         return name;
@@ -13,14 +15,6 @@ public class AnsibleService {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Boolean getCluster() {
-        return cluster;
-    }
-
-    public void setCluster(Boolean cluster) {
-        this.cluster = cluster;
     }
 
     public String getTag_filter() {
@@ -37,5 +31,13 @@ public class AnsibleService {
 
     public void setCheck_sub_domain(String check_sub_domain) {
         this.check_sub_domain = check_sub_domain;
+    }
+
+    public Boolean getAllow_repeat() {
+        return allow_repeat;
+    }
+
+    public void setAllow_repeat(Boolean allow_repeat) {
+        this.allow_repeat = allow_repeat;
     }
 }

@@ -8,9 +8,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import java.util.Map;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BaseVars {
     //    @JsonIgnore
     private String name;
+
+    private Boolean cluster_only;
 
     private List<String> sub_domains;
 
@@ -83,5 +86,13 @@ public class BaseVars {
 
     public void setCheck_sub_domain(String check_sub_domain) {
         this.check_sub_domain = check_sub_domain;
+    }
+
+    public Boolean getCluster_only() {
+        return cluster_only;
+    }
+
+    public void setCluster_only(Boolean cluster_only) {
+        this.cluster_only = cluster_only;
     }
 }

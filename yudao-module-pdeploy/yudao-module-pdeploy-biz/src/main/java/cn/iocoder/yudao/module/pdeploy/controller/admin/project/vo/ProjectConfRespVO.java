@@ -10,8 +10,10 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class ProjectConfRespVO {
 
-    private String mainConf;
+    private String projConfYaml;
 
-    private String ccpassConf;
+    private String projConfJson;
+
+    private String ansibleHosts;
 
 }
